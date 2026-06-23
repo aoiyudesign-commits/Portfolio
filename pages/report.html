@@ -299,7 +299,26 @@
       section { page-break-inside: avoid; }
       .ax-section { page-break-inside: avoid; }
     }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: rgba(250,250,249,0.92); backdrop-filter: blur(20px); border-top: 1px solid #E5E5E3; align-items: stretch; z-index: 200; padding-bottom: env(safe-area-inset-bottom); }
+    .bn-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: #a39e98; font-size: 9px; font-weight: 600; font-family: 'Inter', sans-serif; transition: color .12s; }
+    .bn-item.active { color: #FF6000; }
+    .bn-item svg { width: 20px; height: 20px; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .bottom-nav { display: flex !important; }
+      body { padding-bottom: 60px; }
+      .container { padding: 0 16px 20px; }
+      nav { padding: 0 16px; }
+    }
   </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#FAF9F7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="../manifest.json">
+  <link rel="apple-touch-icon" href="../icons/icon.svg">
 </head>
 <body>
 
@@ -591,5 +610,24 @@
   </footer>
 
 </div>
+
+<nav class="bottom-nav">
+  <a href="../index.html" class="bn-item">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 8.5V17h5.5v-4.5h5V17H18V8.5L10 2z"/></svg>홈
+  </a>
+  <a href="dashboard.html" class="bn-item">
+    <svg viewBox="0 0 20 20" fill="currentColor"><rect x="1" y="1" width="7" height="7" rx="1.5"/><rect x="12" y="1" width="7" height="7" rx="1.5"/><rect x="1" y="12" width="7" height="7" rx="1.5"/><rect x="12" y="12" width="7" height="7" rx="1.5"/></svg>대시보드
+  </a>
+  <a href="voc.html" class="bn-item">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3h14v10H12L10 17v-4H3V3z"/></svg>VOC
+  </a>
+  <a href="hypothesis.html" class="bn-item">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 3v5l3 3M3 10a7 7 0 1014 0A7 7 0 003 10z"/></svg>가설
+  </a>
+  <a href="report.html" class="bn-item active">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="2" width="14" height="16" rx="2"/><line x1="6" y1="7" x2="14" y2="7"/><line x1="6" y1="11" x2="14" y2="11"/><line x1="6" y1="15" x2="10" y2="15"/></svg>리포트
+  </a>
+</nav>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/Portfolio/sw.js');</script>
 </body>
 </html>

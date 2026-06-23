@@ -1,0 +1,38 @@
+{
+  "name": "AI Product Analyst — 29CM",
+  "short_name": "AX Portfolio",
+  "description": "29CM 서비스 개선 분석 포트폴리오 · GA4·VOC·가설 검증 Agent",
+  "start_url": "/Portfolio/",
+  "scope": "/Portfolio/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#000000",
+  "background_color": "#e8ecf5",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "대시보드",
+      "url": "/Portfolio/pages/dashboard.html",
+      "description": "29CM 분석 대시보드"
+    },
+    {
+      "name": "가설 작성",
+      "url": "/Portfolio/pages/hypothesis.html",
+      "description": "데이터 기반 가설 작성"
+    }
+  ]
+}
