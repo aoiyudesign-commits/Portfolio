@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VOC 분석 — AI Product Analyst</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --primary: #0075de;
+      --orange:  #FF6000;
+      --canvas:  #f6f5f4;
+      --surface: #ffffff;
+      --ink:     #000000;
+      --ink-2:   #31302e;
+      --ink-3:   #615d59;
+      --ink-4:   #a39e98;
+      --line:    #e6e6e6;
+      --red:     #e53935;
+      --green:   #1aae39;
+      --r-md: 8px; --r-lg: 12px; --r-full: 9999px;
+      --sh1: 0 0.5px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; color: var(--ink); background: var(--canvas); display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── SIDEBAR ── */
+    .sidebar { width: 240px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    .sb-brand { display: flex; align-items: center; gap: 9px; padding: 20px 18px 18px; border-bottom: 1px solid var(--line); }
+    .sb-brand-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--ink); display: flex; align-items: center; justify-content: center; }
+    .sb-brand-name { font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: -0.2px; }
+    .sb-brand-sub  { font-size: 10px; color: var(--ink-4); margin-top: 1px; }
+    .sb-nav { flex: 1; overflow-y: auto; padding: 12px 8px; }
+    .sb-sec { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-4); padding: 0 10px; margin: 8px 0 4px; }
+    .sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-md); font-size: 13px; font-weight: 500; color: var(--ink-3); text-decoration: none; transition: background .12s, color .12s; margin-bottom: 1px; position: relative; }
+    .sb-item:hover { background: var(--canvas); color: var(--ink); }
+    .sb-item.active { background: rgba(255,96,0,.08); color: var(--orange); font-weight: 600; }
+    .sb-item.active::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; border-radius: 0 2px 2px 0; background: var(--orange); }
+    .sb-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .sb-div  { height: 1px; background: var(--line); margin: 8px 10px; }
+    .sb-footer { padding: 12px 8px; border-top: 1px solid var(--line); }
+    .sb-data-badge { display: flex; align-items: center; gap: 5px; margin: 6px 10px 0; padding: 5px 8px; border-radius: var(--r-md); background: var(--canvas); border: 1px solid var(--line); font-size: 10px; font-weight: 600; color: var(--ink-4); }
+    .sb-data-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 2px rgba(26,174,57,.15); animation: pulse 2s ease-in-out infinite; }
+    .sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
+    .sb-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .sb-user-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+    .sb-user-role { font-size: 11px; color: var(--ink-4); }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 2px rgba(26,174,57,.15)} 50%{box-shadow:0 0 0 5px rgba(26,174,57,.05)} }
+
+    /* ── MAIN ── */
+    .main-wrap { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+    /* Header */
+    .dash-header { background: var(--ink); padding: 28px 32px 24px; flex-shrink: 0; }
+    .dash-header-inner { max-width: 1100px; margin: 0 auto; }
+    .dash-hrow { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 18px; }
+    .dash-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: var(--r-full); padding: 3px 11px; font-size: 10px; font-weight: 600; color: rgba(255,255,255,.6); margin-bottom: 8px; }
+    .dash-h1  { font-size: 22px; font-weight: 800; letter-spacing: -.7px; color: white; margin-bottom: 3px; }
+    .dash-h1 span { color: var(--orange); }
+    .dash-sub { font-size: 11px; color: rgba(255,255,255,.4); }
+    .date-range { font-size: 11px; color: rgba(255,255,255,.5); }
+    .date-range strong { color: rgba(255,255,255,.85); font-weight: 600; }
+    .header-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); border-radius: var(--r-lg); overflow: hidden; }
+    .hs-cell { padding: 14px 16px; background: rgba(255,255,255,.03); }
+    .hs-label { font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: rgba(255,255,255,.38); margin-bottom: 5px; }
+    .hs-value { font-size: 20px; font-weight: 800; letter-spacing: -.7px; color: white; margin-bottom: 2px; }
+    .hs-sub   { font-size: 10px; color: rgba(255,255,255,.35); }
+
+    /* Body */
+    .dash-body { max-width: 1100px; margin: 0 auto; padding: 22px 32px 60px; width: 100%; }
+    .sec-label { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 10px; }
+
+    /* Cards */
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px; box-shadow: var(--sh1); }
+    .card-ey  { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 2px; }
+    .card-ttl { font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: -.2px; margin-bottom: 2px; }
+    .card-sub { font-size: 11px; color: var(--ink-3); margin-bottom: 14px; }
+    .chart-box { position: relative; height: 200px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; align-items: start; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 12px; align-items: start; }
+
+    /* Sentiment bar */
+    .sentiment-wrap { display: flex; height: 12px; border-radius: 6px; overflow: hidden; gap: 2px; margin-bottom: 10px; }
+    .sent-bar { height: 100%; border-radius: 4px; }
+    .sentiment-legend { display: flex; gap: 16px; }
+    .sl-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-3); }
+    .sl-dot  { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* Source pills */
+    .source-pills { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .src-pill { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--r-full); border: 1.5px solid var(--line); cursor: pointer; font-size: 12px; font-weight: 600; color: var(--ink-3); transition: all .12s; background: var(--surface); }
+    .src-pill:hover { border-color: #c0bdb8; color: var(--ink); }
+    .src-pill.active { background: var(--ink); color: white; border-color: var(--ink); }
+    .src-pill-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    /* VOC card grid */
+    .voc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+    .voc-card {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r-lg); padding: 16px;
+      box-shadow: var(--sh1); display: flex; flex-direction: column; gap: 10px;
+      transition: border-color .12s, transform .15s;
+    }
+    .voc-card:hover { border-color: #c8c4bf; transform: translateY(-1px); }
+
+    .voc-card-top { display: flex; align-items: center; justify-content: space-between; }
+    .voc-source-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: var(--r-full);
+    }
+    .badge-review { background: rgba(0,117,222,.08); color: var(--primary); }
+    .badge-community { background: rgba(107,63,191,.08); color: #6B3FBF; }
+    .voc-stars { display: flex; gap: 1px; font-size: 11px; }
+    .star-fill { color: #F59E0B; }
+    .star-empty{ color: #e0e0e0; }
+
+    .voc-text {
+      font-size: 13px; color: var(--ink-2); line-height: 1.65;
+      border-left: 2.5px solid var(--line); padding-left: 10px;
+    }
+    .voc-text.negative { border-left-color: var(--red); }
+    .voc-text.neutral  { border-left-color: #aaa; }
+    .voc-text.positive { border-left-color: var(--green); }
+
+    .voc-card-foot { display: flex; align-items: center; justify-content: space-between; }
+    .voc-cat-tag {
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: var(--r-full);
+    }
+    .cat-pay    { background: rgba(229,57,53,.10); color: var(--red); }
+    .cat-join   { background: rgba(255,96,0,.10);  color: var(--orange); }
+    .cat-search { background: rgba(0,117,222,.08); color: var(--primary); }
+    .cat-img    { background: rgba(107,63,191,.10); color: #6B3FBF; }
+    .cat-return { background: rgba(26,174,57,.10); color: var(--green); }
+    .voc-date   { font-size: 10px; color: var(--ink-4); }
+
+    /* Priority VOC map */
+    .prio-voc-list { display: flex; flex-direction: column; gap: 8px; }
+    .pvo-item { display: flex; gap: 12px; align-items: flex-start; padding: 13px 14px; background: var(--canvas); border: 1px solid var(--line); border-radius: var(--r-md); transition: border-color .12s; }
+    .pvo-item:hover { border-color: rgba(255,96,0,.3); }
+    .pvo-num { width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+    .pvo-num.dim { background: var(--ink-4); }
+    .pvo-body { flex: 1; }
+    .pvo-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+    .pvo-quotes { display: flex; flex-direction: column; gap: 4px; }
+    .pvo-quote { font-size: 11px; color: var(--ink-3); line-height: 1.6; display: flex; gap: 6px; }
+    .pvo-quote::before { content: '"'; color: var(--orange); font-weight: 700; flex-shrink: 0; }
+    .pvo-count { font-size: 11px; font-weight: 700; color: var(--ink-4); white-space: nowrap; }
+    .tag { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: var(--r-full); }
+    .t-neg { background: rgba(229,57,53,.10); color: var(--red); }
+    .t-pri { background: rgba(0,117,222,.08); color: var(--primary); }
+    .t-amp { background: rgba(107,63,191,.10); color: #6B3FBF; }
+
+    /* Key quotes highlight */
+    .highlight-card {
+      background: #fffaf7; border: 1px solid #ffe4cc; border-left: 3px solid var(--orange);
+      border-radius: var(--r-lg); padding: 16px; box-shadow: var(--sh1);
+    }
+    .hc-ey { font-size: 10px; font-weight: 700; color: var(--orange); margin-bottom: 6px; letter-spacing: .04em; }
+    .hc-quote { font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.65; margin-bottom: 8px; }
+    .hc-quote::before { content: '"'; color: var(--orange); }
+    .hc-quote::after  { content: '"'; color: var(--orange); }
+    .hc-meta { font-size: 11px; color: var(--ink-4); }
+
+    footer { border-top: 1px solid var(--line); padding: 16px 32px; text-align: center; font-size: 11px; color: var(--ink-4); flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-brand-icon">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="5.5" stroke="white" stroke-width="1.5"/>
+        <path d="M4 7h6M7 4v6" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="sb-brand-name">AI Product Analyst</div>
+      <div class="sb-brand-sub">29CM 개선 우선순위</div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-sec">메뉴</div>
+
+    <a href="../index.html" class="sb-item">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor">
+          <path d="M7.5 1.5L1 6.5V13h4.5V9.5h4V13H13.5V6.5L7.5 1.5z"/>
+        </svg>
+      </div>홈
+    </a>
+    <a href="dashboard.html" class="sb-item">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor">
+          <rect x="1" y="1" width="5.5" height="5.5" rx="1"/><rect x="8.5" y="1" width="5.5" height="5.5" rx="1"/>
+          <rect x="1" y="8.5" width="5.5" height="5.5" rx="1"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1"/>
+        </svg>
+      </div>대시보드
+    </a>
+    <a href="voc.html" class="sb-item active">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M2 2h11v8H8.5L6 13v-3H2V2z"/>
+        </svg>
+      </div>VOC 분석
+    </a>
+
+    <div class="sb-div"></div>
+    <div class="sb-sec">에이전트</div>
+
+    <a href="hypothesis.html" class="sb-item">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M7.5 2v4l2.5 2.5M2 7.5a5.5 5.5 0 1011 0 5.5 5.5 0 00-11 0z"/>
+        </svg>
+      </div>가설 작성
+    </a>
+
+    <a href="canvas.html" class="sb-item">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="2.5" cy="7.5" r="1.5"/><circle cx="12.5" cy="3" r="1.5"/><circle cx="12.5" cy="12" r="1.5"/>
+          <line x1="4" y1="7" x2="11" y2="3.7"/><line x1="4" y1="8" x2="11" y2="11.3"/>
+        </svg>
+      </div>에이전트 캔버스
+    </a>
+
+    <div class="sb-div"></div>
+    <div class="sb-sec">결과물</div>
+
+    <a href="report.html" class="sb-item">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <rect x="2" y="1" width="11" height="13" rx="1.5"/>
+          <line x1="4.5" y1="4.5" x2="10.5" y2="4.5"/>
+          <line x1="4.5" y1="7.5" x2="10.5" y2="7.5"/>
+          <line x1="4.5" y1="10.5" x2="8" y2="10.5"/>
+        </svg>
+      </div>과제 설계 리포트
+    </a>
+  </nav>
+
+  <div class="sb-footer">
+    <div class="sb-data-badge">
+      <div class="sb-data-dot"></div>
+      앱스토어 리뷰 · 커뮤니티 VOC
+    </div>
+    <div class="sb-user" style="margin-top:8px;">
+      <div class="sb-avatar">김</div>
+      <div>
+        <div class="sb-user-name">김유빈</div>
+        <div class="sb-user-role">서비스 기획자 · IT</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main-wrap">
+
+  <div class="dash-header">
+    <div class="dash-header-inner">
+      <div class="dash-hrow">
+        <div>
+          <div class="dash-badge">● 정성 데이터 · 29CM 앱 리뷰 + 커뮤니티</div>
+          <div class="dash-h1">VOC <span>분석</span></div>
+          <div class="dash-sub">29CM 앱스토어 리뷰 · 커뮤니티 게시글 · 수집 및 AI 분류 완료</div>
+        </div>
+        <div class="date-range">수집 기간&nbsp;&nbsp;<strong>2026년 5월 26일 – 6월 22일</strong></div>
+      </div>
+      <div class="header-stats">
+        <div class="hs-cell">
+          <div class="hs-label">총 수집</div>
+          <div class="hs-value">166건</div>
+          <div class="hs-sub">AI 분류 완료</div>
+        </div>
+        <div class="hs-cell">
+          <div class="hs-label">앱스토어 리뷰</div>
+          <div class="hs-value">95건</div>
+          <div class="hs-sub">평균 별점 2.8★</div>
+        </div>
+        <div class="hs-cell">
+          <div class="hs-label">커뮤니티 VOC</div>
+          <div class="hs-value">71건</div>
+          <div class="hs-sub">에펨코리아 · 클리앙</div>
+        </div>
+        <div class="hs-cell">
+          <div class="hs-label">부정 비율</div>
+          <div class="hs-value">78%</div>
+          <div class="hs-sub">개선 기회 신호</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-body">
+
+    <!-- 카테고리 분포 + 감성 분석 -->
+    <div class="sec-label">수집 현황 분석</div>
+    <div class="grid-2" style="margin-bottom:16px;">
+
+      <div class="card">
+        <div class="card-ey">AI 자동 분류</div>
+        <div class="card-ttl">카테고리별 VOC 분포</div>
+        <div class="card-sub">총 166건 · 5개 카테고리</div>
+        <div class="chart-box">
+          <canvas id="catChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-ey">감성 분석 · AI 판별</div>
+        <div class="card-ttl">감성 분포</div>
+        <div class="card-sub">부정 신호 중심 — 개선 기회</div>
+        <div class="sentiment-wrap">
+          <div class="sent-bar" style="width:78%;background:#e53935;"></div>
+          <div class="sent-bar" style="width:15%;background:#bbb;"></div>
+          <div class="sent-bar" style="width:7%;background:#1aae39;"></div>
+        </div>
+        <div class="sentiment-legend" style="margin-bottom:20px;">
+          <div class="sl-item"><div class="sl-dot" style="background:#e53935;"></div>부정 78% (130건)</div>
+          <div class="sl-item"><div class="sl-dot" style="background:#bbb;"></div>중립 15% (25건)</div>
+          <div class="sl-item"><div class="sl-dot" style="background:#1aae39;"></div>긍정 7% (11건)</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4);margin-bottom:2px;">소스별 부정 비율</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;">
+            <span style="width:80px;color:var(--ink-3);font-weight:500;">앱스토어</span>
+            <div style="flex:1;height:6px;background:var(--canvas);border-radius:3px;overflow:hidden;">
+              <div style="width:82%;height:100%;background:#e53935;border-radius:3px;"></div>
+            </div>
+            <span style="font-weight:700;color:var(--ink);">82%</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:12px;">
+            <span style="width:80px;color:var(--ink-3);font-weight:500;">커뮤니티</span>
+            <div style="flex:1;height:6px;background:var(--canvas);border-radius:3px;overflow:hidden;">
+              <div style="width:72%;height:100%;background:#e53935;border-radius:3px;"></div>
+            </div>
+            <span style="font-weight:700;color:var(--ink);">72%</span>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:12px;background:var(--canvas);border-radius:var(--r-md);font-size:11px;color:var(--ink-3);line-height:1.6;">
+          <strong style="color:var(--ink);">인사이트 —</strong> 부정 VOC의 63%가 결제·회원가입 2개 카테고리에 집중. 이 두 문제 해결 시 전체 불만의 과반 해소 가능.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 핵심 인용구 하이라이트 -->
+    <div class="sec-label">핵심 인용구 하이라이트</div>
+    <div class="grid-3" style="margin-bottom:16px;">
+      <div class="highlight-card">
+        <div class="hc-ey">결제·정산 · 앱스토어 ★1</div>
+        <div class="hc-quote">장바구니에 담아두고 결제 누르면 계속 튕겨요. 세 번 시도했는데 전부 실패해서 그냥 다른 앱 씀</div>
+        <div class="hc-meta">6월 8일 · iOS 앱스토어</div>
+      </div>
+      <div class="highlight-card">
+        <div class="hc-ey">회원가입 · 커뮤니티</div>
+        <div class="hc-quote">29CM 회원가입 절차가 진짜 구식이에요. 소셜 로그인도 안 되고 인증 단계가 왜 이렇게 많은지 모르겠음</div>
+        <div class="hc-meta">6월 3일 · 에펨코리아</div>
+      </div>
+      <div class="highlight-card">
+        <div class="hc-ey">이미지·로딩 · 앱스토어 ★2</div>
+        <div class="hc-quote">상품 이미지 로딩이 너무 느려요. LTE 환경에서는 거의 못 쓸 수준. 경쟁 앱들은 훨씬 빠른데</div>
+        <div class="hc-meta">5월 29일 · Android 앱스토어</div>
+      </div>
+    </div>
+
+    <!-- VOC 원문 카드 -->
+    <div class="sec-label">VOC 원문</div>
+    <div style="margin-bottom:12px;">
+      <div class="source-pills">
+        <div class="src-pill active" onclick="filterVoc('all', this)">
+          <div class="src-pill-dot" style="background:var(--orange);"></div>전체 166건
+        </div>
+        <div class="src-pill" onclick="filterVoc('review', this)">
+          <div class="src-pill-dot" style="background:var(--primary);"></div>앱스토어 리뷰 95건
+        </div>
+        <div class="src-pill" onclick="filterVoc('community', this)">
+          <div class="src-pill-dot" style="background:#6B3FBF;"></div>커뮤니티 71건
+        </div>
+      </div>
+    </div>
+    <div class="voc-grid" id="vocGrid"></div>
+
+    <!-- 우선순위 VOC 매핑 -->
+    <div class="sec-label" style="margin-top:20px;">개선 우선순위별 VOC 매핑</div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-ey">정성 교차 검증 완료</div>
+      <div class="card-ttl">우선순위 × VOC 연결</div>
+      <div class="card-sub" style="margin-bottom:14px;">각 개선 과제에 실제 VOC가 어떻게 연결되는지 확인합니다</div>
+      <div class="prio-voc-list">
+        <div class="pvo-item">
+          <div class="pvo-num">1</div>
+          <div class="pvo-body">
+            <div class="pvo-title">장바구니 → 결제 전환 개선</div>
+            <div class="pvo-quotes">
+              <div class="pvo-quote">장바구니 담아놨는데 결제하면 오류 뜨고 튕겨요. 몇 번을 시도해도 계속</div>
+              <div class="pvo-quote">결제 단계 진입하면 앱이 꺼져요. 아이폰 최신 버전인데도</div>
+              <div class="pvo-quote">카드 등록하고 결제 누르면 로딩만 하다가 실패 뜸</div>
+            </div>
+            <div style="display:flex;gap:5px;margin-top:6px;">
+              <span class="tag t-neg">부정 48건</span>
+              <span class="tag t-pri">결제·정산 카테고리</span>
+            </div>
+          </div>
+          <div class="pvo-count">52건</div>
+        </div>
+        <div class="pvo-item">
+          <div class="pvo-num">2</div>
+          <div class="pvo-body">
+            <div class="pvo-title">회원가입 프로세스 간소화</div>
+            <div class="pvo-quotes">
+              <div class="pvo-quote">소셜 로그인 안 되는 게 제일 불편해요. 이메일 인증 거쳐야 하는 게 귀찮음</div>
+              <div class="pvo-quote">회원가입 단계가 너무 많아서 중간에 포기함. 다른 앱은 카카오로 바로 되는데</div>
+            </div>
+            <div style="display:flex;gap:5px;margin-top:6px;">
+              <span class="tag t-neg">부정 41건</span>
+              <span class="tag t-pri">회원가입 카테고리</span>
+            </div>
+          </div>
+          <div class="pvo-count">47건</div>
+        </div>
+        <div class="pvo-item">
+          <div class="pvo-num">3</div>
+          <div class="pvo-body">
+            <div class="pvo-title">검색 · 필터 UX 개선</div>
+            <div class="pvo-quotes">
+              <div class="pvo-quote">필터 설정하고 나면 초기화되는 버그가 있어요. 매번 다시 설정해야 함</div>
+              <div class="pvo-quote">검색 결과가 내가 원하는 것과 너무 달리 나와요. 연관 검색이 이상함</div>
+            </div>
+            <div style="display:flex;gap:5px;margin-top:6px;">
+              <span class="tag t-neg">부정 31건</span>
+              <span class="tag t-pri">검색·필터 카테고리</span>
+            </div>
+          </div>
+          <div class="pvo-count">38건</div>
+        </div>
+        <div class="pvo-item">
+          <div class="pvo-num dim">4</div>
+          <div class="pvo-body">
+            <div class="pvo-title">이미지 · 로딩 속도 최적화</div>
+            <div class="pvo-quotes">
+              <div class="pvo-quote">상품 이미지 로딩이 너무 오래 걸림. LTE에서는 거의 못 씀</div>
+              <div class="pvo-quote">앱 전체가 느려요. 특히 상세 페이지 들어갈 때마다 굳어버림</div>
+            </div>
+            <div style="display:flex;gap:5px;margin-top:6px;">
+              <span class="tag t-neg">부정 27건</span>
+              <span class="tag t-amp">이미지·로딩 카테고리</span>
+            </div>
+          </div>
+          <div class="pvo-count">31건</div>
+        </div>
+        <div class="pvo-item">
+          <div class="pvo-num dim">5</div>
+          <div class="pvo-body">
+            <div class="pvo-title">교환 · 환불 프로세스 개선</div>
+            <div class="pvo-quotes">
+              <div class="pvo-quote">교환 신청 메뉴를 못 찾겠어요. CS 채팅도 응답이 너무 느림</div>
+              <div class="pvo-quote">환불 신청하고 2주가 지났는데 아직도 처리중이래요</div>
+            </div>
+            <div style="display:flex;gap:5px;margin-top:6px;">
+              <span class="tag t-neg">부정 22건</span>
+              <span class="tag t-amp">교환·환불 카테고리</span>
+            </div>
+          </div>
+          <div class="pvo-count">28건</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /dash-body -->
+
+  <footer>
+    <p>AI Product Analyst Agent — 김유빈 · 서비스 기획자 · IT · 분석 대상: 29CM</p>
+  </footer>
+
+</div><!-- /main-wrap -->
+
+<script>
+/* ── 카테고리 차트 ── */
+new Chart(document.getElementById('catChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['결제·정산','회원가입','검색·필터','이미지·로딩','교환·환불'],
+    datasets: [{
+      data: [52, 47, 38, 31, 28],
+      backgroundColor: ['#e53935','#FF6000','#0075de','#6B3FBF','#1aae39'],
+      borderRadius: 6, borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.x}건` } } },
+    scales: {
+      x: { grid: { color: '#f6f5f4' }, ticks: { font: { size: 10, family: 'Inter' }, color: '#a39e98' } },
+      y: { grid: { display: false }, ticks: { font: { size: 11, family: 'Inter' }, color: '#31302e' } }
+    }
+  }
+});
+
+/* ── VOC 원문 데이터 ── */
+const VOC_DATA = [
+  { src:'review', cat:'pay',    sent:'negative', stars:1, text:'장바구니에 담아두고 결제 누르면 계속 튕겨요. 세 번 시도했는데 전부 실패해서 그냥 다른 앱 씀', date:'6월 8일', platform:'iOS 앱스토어' },
+  { src:'review', cat:'join',   sent:'negative', stars:2, text:'소셜 로그인 왜 안 되나요? 이메일로만 가입해야 하고 인증 단계가 너무 많아서 포기할 뻔 했어요', date:'6월 5일', platform:'iOS 앱스토어' },
+  { src:'community', cat:'pay', sent:'negative', stars:null, text:'29CM 결제 버그 있나요? 신용카드 등록하고 결제 누르면 로딩만 하다가 실패 뜨는데 저만 그런 건지', date:'6월 3일', platform:'에펨코리아' },
+  { src:'review', cat:'img',    sent:'negative', stars:2, text:'상품 이미지 로딩이 너무 느려요. LTE 환경에서는 거의 못 쓸 수준. 경쟁 앱들은 훨씬 빠른데', date:'5월 29일', platform:'Android 앱스토어' },
+  { src:'community', cat:'join', sent:'negative', stars:null, text:'29CM 회원가입 절차가 진짜 구식이에요. 소셜 로그인도 안 되고 인증 단계가 왜 이렇게 많은지', date:'6월 3일', platform:'에펨코리아' },
+  { src:'review', cat:'search', sent:'negative', stars:2, text:'필터 설정하고 나면 초기화되는 버그가 있어요. 가격대 설정해도 다른 카테고리 누르면 사라짐', date:'6월 11일', platform:'iOS 앱스토어' },
+  { src:'community', cat:'pay', sent:'negative', stars:null, text:'결제 단계 들어가면 앱이 멈춰버려요. 아이폰 최신 버전인데도 계속 이럼. 결제 못 해서 다른 곳에서 삼', date:'5월 31일', platform:'클리앙' },
+  { src:'review', cat:'return', sent:'negative', stars:1, text:'교환 신청 메뉴 찾기가 너무 어려워요. CS 채팅은 응답도 느리고. 다른 쇼핑앱들은 환불이 훨씬 쉬운데', date:'6월 14일', platform:'Android 앱스토어' },
+  { src:'review', cat:'search', sent:'negative', stars:2, text:'검색하면 내가 찾는 것과 전혀 다른 게 나와요. 연관 키워드도 이상하고 필터도 직관적이지 않음', date:'6월 7일', platform:'iOS 앱스토어' },
+  { src:'community', cat:'img', sent:'neutral', stars:null, text:'요즘 29CM 앱 무거워진 건 저만 느끼는 건가요? 이미지 뜨는 데 예전보다 확실히 오래 걸리는 것 같은데', date:'6월 9일', platform:'클리앙' },
+  { src:'review', cat:'pay',    sent:'negative', stars:1, text:'카드 등록해두면 자동으로 저장되어야 하는데 매번 다시 입력해야 해요. 결제할 때마다 스트레스', date:'6월 17일', platform:'iOS 앱스토어' },
+  { src:'review', cat:'join',   sent:'positive', stars:4, text:'디자인은 정말 예쁜데 처음 가입할 때 조금 복잡했어요. 익숙해지니까 쓸만함', date:'6월 20일', platform:'iOS 앱스토어' },
+];
+
+function renderVoc(filter) {
+  const filtered = filter === 'all' ? VOC_DATA : VOC_DATA.filter(v => v.src === filter);
+  const catMap = { pay:'결제·정산', join:'회원가입', search:'검색·필터', img:'이미지·로딩', return:'교환·환불' };
+  const catClass = { pay:'cat-pay', join:'cat-join', search:'cat-search', img:'cat-img', return:'cat-return' };
+  const sentClass = { negative:'negative', neutral:'neutral', positive:'positive' };
+  const sentLabel = { negative:'부정', neutral:'중립', positive:'긍정' };
+  const stars = n => n ? '★'.repeat(n) + '☆'.repeat(5-n) : null;
+
+  document.getElementById('vocGrid').innerHTML = filtered.map(v => `
+    <div class="voc-card">
+      <div class="voc-card-top">
+        <span class="voc-source-badge ${v.src === 'review' ? 'badge-review' : 'badge-community'}">
+          ${v.src === 'review' ? '앱스토어 리뷰' : '커뮤니티'}
+        </span>
+        ${v.stars ? `<div class="voc-stars">
+          ${[1,2,3,4,5].map(i => `<span class="${i<=v.stars?'star-fill':'star-empty'}">★</span>`).join('')}
+        </div>` : `<span style="font-size:10px;color:var(--ink-4);">${v.platform}</span>`}
+      </div>
+      <div class="voc-text ${sentClass[v.sent]}">${v.text}</div>
+      <div class="voc-card-foot">
+        <span class="voc-cat-tag ${catClass[v.cat]}">${catMap[v.cat]}</span>
+        <span class="voc-date">${v.date} · ${v.platform}</span>
+      </div>
+    </div>`).join('');
+}
+
+function filterVoc(type, el) {
+  document.querySelectorAll('.src-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderVoc(type);
+}
+
+renderVoc('all');
+</script>
+</body>
+</html>

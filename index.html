@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Product Analyst — 29CM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── Design Tokens ── */
+    :root {
+      --primary:   #0075de;
+      --orange:    #FF6000;
+      --ink:       #0a0a0a;
+      --ink-2:     #444;
+      --ink-3:     #888;
+      --ink-4:     #bbb;
+      --hairline:  #e6e6e6;
+      --surface:   #ffffff;
+      --r-md: 10px; --r-lg: 16px; --r-xl: 20px; --r-full: 9999px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 14px; height: 100vh; overflow: hidden;
+      /* Soft mesh background — makes glassmorphism readable */
+      background-color: #e8ecf5;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 15% 15%, rgba(140,160,255,0.25) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 50% at 85% 20%, rgba(200,140,255,0.15) 0%, transparent 55%),
+        radial-gradient(ellipse 90% 70% at 50% 90%, rgba(100,180,255,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(255,140,100,0.10) 0%, transparent 50%);
+    }
+
+    /* ══════════════════════════════
+       LANDING
+    ══════════════════════════════ */
+    .landing {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 32px;
+      transition: opacity 0.38s ease, transform 0.38s ease, filter 0.38s ease;
+    }
+    .landing.out { opacity: 0; transform: scale(0.97) translateY(-6px); filter: blur(4px); pointer-events: none; }
+
+    /* Badge */
+    .lv-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(255,255,255,0.65); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.55);
+      border-radius: var(--r-full); padding: 5px 14px 5px 5px;
+      font-size: 12px; font-weight: 500; color: #555;
+      margin-bottom: 28px; cursor: default;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .lv-badge-icon {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--orange); display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Hero */
+    .lv-h1 {
+      font-size: 42px; font-weight: 800; letter-spacing: -2px; color: var(--ink);
+      line-height: 1.12; margin-bottom: 14px; text-align: center;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.5);
+    }
+    .lv-sub {
+      font-size: 15px; color: #555; line-height: 1.65;
+      text-align: center; max-width: 440px; margin-bottom: 44px;
+    }
+
+    /* ── Cards grid ── */
+    .lv-cards { display: grid; grid-template-columns: repeat(3, 240px); gap: 14px; margin-bottom: 36px; }
+
+    /* Glass card */
+    .lv-card {
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.65);
+      border-radius: var(--r-xl);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.95),
+        inset 0 -1px 0 rgba(0,0,0,0.03),
+        0 2px 4px rgba(0,0,0,0.03),
+        0 6px 20px rgba(0,0,0,0.07),
+        0 20px 48px rgba(0,0,0,0.07);
+      overflow: hidden; cursor: pointer;
+      transform: translateY(0px);
+      transition: box-shadow 0.25s ease, transform 0.3s ease;
+      will-change: transform;
+    }
+    .lv-card:hover {
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.95),
+        inset 0 -1px 0 rgba(0,0,0,0.03),
+        0 4px 12px rgba(0,0,0,0.06),
+        0 16px 48px rgba(0,0,0,0.12),
+        0 36px 80px rgba(0,0,0,0.09);
+    }
+
+    /* Wobble keyframe — starts at lifted position */
+    @keyframes wobble {
+      0%   { transform: translateY(0)    rotate(0deg);    }
+      12%  { transform: translateY(-9px) rotate(-2.5deg); }
+      24%  { transform: translateY(-9px) rotate(2.5deg);  }
+      36%  { transform: translateY(-7px) rotate(-1.6deg); }
+      48%  { transform: translateY(-7px) rotate(1.2deg);  }
+      60%  { transform: translateY(-6px) rotate(-0.8deg); }
+      72%  { transform: translateY(-6px) rotate(0.4deg);  }
+      84%  { transform: translateY(-5px) rotate(-0.2deg); }
+      100% { transform: translateY(-5px) rotate(0deg);    }
+    }
+    .lv-card.wobble { animation: wobble 0.52s cubic-bezier(0.36,0.07,0.19,0.97); }
+
+    /* Card content — Medusa style: label on top, art below */
+    .card-label {
+      padding: 15px 16px 10px;
+      font-size: 13px; font-weight: 600; color: var(--ink-2);
+      letter-spacing: -0.1px;
+    }
+    .card-art {
+      margin: 0 10px 10px; border-radius: 12px; overflow: hidden;
+      height: 200px; display: flex; align-items: center; justify-content: center;
+      background: rgba(248,248,246,0.8);
+      border: 1px solid rgba(0,0,0,0.055);
+      position: relative;
+    }
+
+    /* Footer hint */
+    .lv-hint { font-size: 12px; color: rgba(0,0,0,0.35); display: flex; align-items: center; gap: 7px; }
+    .kbd {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 22px; height: 22px; padding: 0 5px;
+      background: rgba(255,255,255,0.7); backdrop-filter: blur(8px);
+      border: 1px solid rgba(0,0,0,0.12); border-radius: 5px;
+      font-size: 11px; font-weight: 600; color: #444;
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- ══ LANDING ══ -->
+<div class="landing" id="landing">
+
+  <div class="lv-badge">
+    <div class="lv-badge-icon">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <path d="M5 1v8M1 5h8" stroke="white" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+    </div>
+    AI Product Analyst v1.0 · 29CM 개선 우선순위 분석 에이전트
+  </div>
+
+  <h1 class="lv-h1">데이터로 발견하고,<br>우선순위로 실행한다.</h1>
+  <p class="lv-sub">GA4 · Amplitude · VOC 데이터를 AI가 통합 분석해<br>29CM 서비스 개선 우선순위를 자동으로 도출합니다.</p>
+
+  <div class="lv-cards">
+
+    <!-- 대시보드 -->
+    <div class="lv-card" id="card0" onclick="go('pages/dashboard.html')">
+      <div class="card-label">대시보드</div>
+      <div class="card-art">
+        <svg width="220" height="196" viewBox="0 0 220 196" fill="none">
+          <!-- dark header -->
+          <rect x="0" y="0" width="220" height="36" fill="#0a0a0a"/>
+          <rect x="8" y="11" width="60" height="14" rx="4" fill="rgba(255,255,255,0.12)"/>
+          <rect x="76" y="14" width="30" height="8" rx="2" fill="rgba(255,255,255,0.07)"/>
+          <circle cx="204" cy="18" r="6" fill="rgba(255,96,0,0.7)"/>
+          <!-- metric cards -->
+          <rect x="6" y="44" width="46" height="38" rx="5" fill="white" stroke="#ebebeb" stroke-width="0.75"/>
+          <text x="11" y="56" font-family="Inter" font-size="6" fill="#aaa">세션수</text>
+          <text x="11" y="66" font-family="Inter" font-size="7.5" font-weight="800" fill="#0075de">102,572</text>
+          <text x="11" y="75" font-family="Inter" font-size="5.5" fill="#e53935" font-weight="600">▼ 8.3%</text>
+          <rect x="57" y="44" width="46" height="38" rx="5" fill="white" stroke="#ebebeb" stroke-width="0.75"/>
+          <text x="62" y="56" font-family="Inter" font-size="6" fill="#aaa">이탈률</text>
+          <text x="62" y="66" font-family="Inter" font-size="7.5" font-weight="800" fill="#e53935">58.65%</text>
+          <text x="62" y="75" font-family="Inter" font-size="5.5" fill="#e53935" font-weight="600">▼ 2.1%p</text>
+          <rect x="108" y="44" width="46" height="38" rx="5" fill="white" stroke="#ebebeb" stroke-width="0.75"/>
+          <text x="113" y="56" font-family="Inter" font-size="6" fill="#aaa">거래</text>
+          <text x="113" y="66" font-family="Inter" font-size="7.5" font-weight="800" fill="#1aae39">1,114</text>
+          <text x="113" y="75" font-family="Inter" font-size="5.5" fill="#e53935" font-weight="600">▼ 12.4%</text>
+          <rect x="159" y="44" width="54" height="38" rx="5" fill="white" stroke="#ebebeb" stroke-width="0.75"/>
+          <text x="164" y="56" font-family="Inter" font-size="6" fill="#aaa">VOC</text>
+          <text x="164" y="66" font-family="Inter" font-size="7.5" font-weight="800" fill="#FF6000">166건</text>
+          <text x="164" y="75" font-family="Inter" font-size="5.5" fill="#1aae39" font-weight="600">● 신규</text>
+          <!-- chart area -->
+          <rect x="6" y="89" width="120" height="100" rx="5" fill="white" stroke="#ebebeb" stroke-width="0.75"/>
+          <text x="11" y="100" font-family="Inter" font-size="6" fill="#aaa">세션 트렌드</text>
+          <!-- bars -->
+          <rect x="11" y="158" width="8" height="20" rx="1.5" fill="#0075de" opacity="0.18"/>
+          <rect x="22" y="148" width="8" height="30" rx="1.5" fill="#0075de" opacity="0.28"/>
+          <rect x="33" y="138" width="8" height="40" rx="1.5" fill="#0075de" opacity="0.42"/>
+          <rect x="44" y="150" width="8" height="28" rx="1.5" fill="#0075de" opacity="0.28"/>
+          <rect x="55" y="130" width="8" height="48" rx="1.5" fill="#0075de" opacity="0.6"/>
+          <rect x="66" y="142" width="8" height="36" rx="1.5" fill="#0075de" opacity="0.42"/>
+          <rect x="77" y="120" width="8" height="58" rx="1.5" fill="#0075de"/>
+          <!-- trend line -->
+          <polyline points="93,155 100,140 108,145 116,128" stroke="#0075de" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+          <!-- priority callout -->
+          <rect x="133" y="89" width="80" height="100" rx="5" fill="#fffaf7" stroke="#ffd8b4" stroke-width="0.75"/>
+          <rect x="133" y="89" width="3.5" height="100" rx="1.75" fill="#FF6000" opacity="0.7"/>
+          <text x="140" y="102" font-family="Inter" font-size="5.5" font-weight="700" fill="#FF6000">#1 우선순위</text>
+          <text x="140" y="113" font-family="Inter" font-size="6" font-weight="700" fill="#0a0a0a">장바구니→결제</text>
+          <text x="140" y="123" font-family="Inter" font-size="6" font-weight="700" fill="#0a0a0a">전환 개선</text>
+          <text x="140" y="135" font-family="Inter" font-size="5.5" fill="#888">581 세션 이탈</text>
+          <text x="140" y="144" font-family="Inter" font-size="5.5" fill="#888">VOC 3위 교차 확인</text>
+          <rect x="140" y="153" width="35" height="12" rx="4" fill="#FF6000"/>
+          <text x="147" y="162" font-family="Inter" font-size="5.5" font-weight="700" fill="white">자세히 보기</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 에이전트 캔버스 -->
+    <div class="lv-card" id="card1" onclick="go('pages/canvas.html')">
+      <div class="card-label">에이전트 캔버스</div>
+      <div class="card-art" style="background:rgba(26,26,30,0.88);">
+        <svg width="220" height="196" viewBox="0 0 220 196" fill="none">
+          <!-- canvas bg grid dots -->
+          <pattern id="dots" width="12" height="12" patternUnits="userSpaceOnUse">
+            <circle cx="6" cy="6" r="0.7" fill="rgba(255,255,255,0.12)"/>
+          </pattern>
+          <rect width="220" height="196" fill="url(#dots)"/>
+          <!-- bezier connections -->
+          <path d="M52,98 C80,98 110,55 148,55" stroke="#FF6000" stroke-width="1.5" stroke-dasharray="5,3.5" stroke-linecap="round" opacity="0.65"/>
+          <path d="M52,98 C80,98 110,98 148,98" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-dasharray="5,3.5" stroke-linecap="round"/>
+          <path d="M52,98 C80,98 110,142 148,142" stroke="#0075de" stroke-width="1.5" stroke-dasharray="5,3.5" stroke-linecap="round" opacity="0.65"/>
+          <!-- mid connector node -->
+          <rect x="88" y="88" width="22" height="22" rx="7" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          <circle cx="99" cy="99" r="3.5" fill="rgba(255,150,50,0.5)"/>
+          <!-- source node (orange) -->
+          <rect x="28" y="78" width="30" height="40" rx="9" fill="#FF6000"/>
+          <text x="30" y="93" font-family="Inter" font-size="5.5" font-weight="700" fill="white">데이터</text>
+          <text x="30" y="103" font-family="Inter" font-size="5.5" font-weight="700" fill="white">소스</text>
+          <circle cx="43" cy="115" r="3" fill="rgba(255,255,255,0.5)"/>
+          <!-- output nodes -->
+          <rect x="148" y="38" width="58" height="28" rx="7" fill="#0075de"/>
+          <text x="155" y="50" font-family="Inter" font-size="5.5" font-weight="700" fill="white">GA4 분석</text>
+          <text x="155" y="60" font-family="Inter" font-size="5" fill="rgba(255,255,255,0.6)">자동화</text>
+          <rect x="148" y="81" width="58" height="28" rx="7" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          <text x="155" y="93" font-family="Inter" font-size="5.5" font-weight="600" fill="rgba(255,255,255,0.7)">VOC 검증</text>
+          <text x="155" y="103" font-family="Inter" font-size="5" fill="rgba(255,255,255,0.4)">휴먼 루프</text>
+          <rect x="148" y="125" width="58" height="28" rx="7" fill="#0075de"/>
+          <text x="155" y="137" font-family="Inter" font-size="5.5" font-weight="700" fill="white">우선순위</text>
+          <text x="155" y="147" font-family="Inter" font-size="5" fill="rgba(255,255,255,0.6)">자동화</text>
+          <!-- animated pulse dots (static for SVG) -->
+          <circle cx="43" cy="98" r="2" fill="rgba(255,150,50,0.9)"/>
+          <circle cx="177" cy="52" r="2" fill="rgba(255,255,255,0.8)"/>
+          <circle cx="177" cy="95" r="2" fill="rgba(255,255,255,0.35)"/>
+          <circle cx="177" cy="139" r="2" fill="rgba(255,255,255,0.8)"/>
+          <!-- label -->
+          <rect x="6" y="170" width="208" height="20" rx="4" fill="rgba(255,255,255,0.05)"/>
+          <text x="14" y="182" font-family="Inter" font-size="6" fill="rgba(255,255,255,0.4)">11 nodes · 12 connections · 4 data sources</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 과제 설계 리포트 -->
+    <div class="lv-card" id="card2" onclick="go('pages/report.html')">
+      <div class="card-label">과제 설계 리포트</div>
+      <div class="card-art">
+        <svg width="220" height="196" viewBox="0 0 220 196" fill="none">
+          <!-- document shadow -->
+          <rect x="24" y="12" width="168" height="174" rx="10" fill="rgba(0,0,0,0.04)"/>
+          <!-- document body -->
+          <rect x="18" y="8" width="168" height="174" rx="10" fill="white" stroke="#e8e8e4" stroke-width="0.75"/>
+          <!-- orange left bar -->
+          <rect x="18" y="8" width="5.5" height="174" rx="2.75" fill="#FF6000" opacity="0.5"/>
+          <!-- header -->
+          <text x="31" y="26" font-family="Inter" font-size="8" font-weight="800" fill="#0a0a0a">과제 설계 리포트</text>
+          <rect x="31" y="31" width="100" height="2.5" rx="1.25" fill="#e8e8e4"/>
+          <text x="31" y="42" font-family="Inter" font-size="6" fill="#aaa">AI Product Analyst · 29CM · 김유빈</text>
+          <!-- divider -->
+          <rect x="31" y="50" width="142" height="0.75" fill="#ebebeb"/>
+          <!-- priority 1 -->
+          <circle cx="40" cy="63" r="7" fill="#0a0a0a"/>
+          <text x="37" y="67" font-family="Inter" font-size="7" font-weight="800" fill="white">1</text>
+          <text x="52" y="61" font-family="Inter" font-size="7" font-weight="700" fill="#0a0a0a">장바구니 → 결제 전환 개선</text>
+          <text x="52" y="72" font-family="Inter" font-size="6" fill="#888">581 세션 이탈 · 핵심 구매 퍼널 · VOC 3위</text>
+          <rect x="52" y="76" width="35" height="8" rx="3" fill="rgba(229,57,53,0.1)"/>
+          <text x="55" y="82" font-family="Inter" font-size="5.5" font-weight="700" fill="#e53935">영향도 높음</text>
+          <!-- priority 2 -->
+          <circle cx="40" cy="98" r="7" fill="#333"/>
+          <text x="37" y="102" font-family="Inter" font-size="7" font-weight="800" fill="white">2</text>
+          <text x="52" y="96" font-family="Inter" font-size="7" font-weight="700" fill="#0a0a0a">회원가입 프로세스 간소화</text>
+          <text x="52" y="107" font-family="Inter" font-size="6" fill="#888">VOC 1위 47건 · 전환 퍼널 진입 직결</text>
+          <!-- priority 3 -->
+          <circle cx="40" cy="128" r="7" fill="#888"/>
+          <text x="37" y="132" font-family="Inter" font-size="7" font-weight="800" fill="white">3</text>
+          <text x="52" y="126" font-family="Inter" font-size="7" font-weight="700" fill="#0a0a0a">상품 상세 → 장바구니 전환</text>
+          <text x="52" y="137" font-family="Inter" font-size="6" fill="#888">2,556 세션 이탈 · 퍼널 최대 이탈 단계</text>
+          <!-- faded items -->
+          <circle cx="40" cy="155" r="7" fill="#bbb"/>
+          <text x="37" y="159" font-family="Inter" font-size="7" font-weight="800" fill="white">4</text>
+          <rect x="52" y="151" width="100" height="5.5" rx="2.75" fill="#e8e8e4"/>
+          <circle cx="40" cy="172" r="7" fill="#ddd"/>
+          <text x="37" y="176" font-family="Inter" font-size="7" font-weight="800" fill="white">5</text>
+          <rect x="52" y="168" width="80" height="5.5" rx="2.75" fill="#ebebeb"/>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="lv-hint">
+    Press <span class="kbd">D</span> Dashboard &nbsp;·&nbsp;
+    <span class="kbd">C</span> Canvas &nbsp;·&nbsp;
+    <span class="kbd">R</span> Report &nbsp;·&nbsp;
+    <span class="kbd">Esc</span> Back
+  </div>
+
+</div><!-- /landing -->
+
+<script>
+/* 카드 클릭 → 페이지 이동 (fade out 후 navigate) */
+function go(href) {
+  document.getElementById('landing').classList.add('out');
+  setTimeout(() => window.location.href = href, 260);
+}
+
+/* Wobble on hover */
+document.querySelectorAll('.lv-card').forEach(card => {
+  card.addEventListener('mouseenter', () => {
+    card.classList.remove('wobble');
+    void card.offsetWidth;
+    card.classList.add('wobble');
+  });
+  card.addEventListener('animationend', () => card.classList.remove('wobble'));
+  card.addEventListener('mouseleave', () => card.classList.remove('wobble'));
+});
+
+/* Keyboard shortcuts */
+document.addEventListener('keydown', e => {
+  if (e.key==='d'||e.key==='D') go('pages/dashboard.html');
+  if (e.key==='c'||e.key==='C') go('pages/canvas.html');
+  if (e.key==='r'||e.key==='R') go('pages/report.html');
+});
+</script>
+</body>
+</html>

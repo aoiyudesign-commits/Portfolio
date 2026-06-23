@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>가설 작성 — AI Product Analyst</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0075de;
+      --orange:  #FF6000;
+      --canvas:  #f6f5f4;
+      --surface: #ffffff;
+      --ink:     #000000;
+      --ink-2:   #31302e;
+      --ink-3:   #615d59;
+      --ink-4:   #a39e98;
+      --line:    #e6e6e6;
+      --red:     #e53935;
+      --green:   #1aae39;
+      --r-md: 8px; --r-lg: 12px; --r-full: 9999px;
+      --sh1: 0 0.5px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; color: var(--ink); background: var(--canvas); display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── SIDEBAR ── */
+    .sidebar { width: 240px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; height: 100vh; }
+    .sb-brand { display: flex; align-items: center; gap: 9px; padding: 20px 18px 18px; border-bottom: 1px solid var(--line); }
+    .sb-brand-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--ink); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .sb-brand-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+    .sb-brand-sub  { font-size: 10px; color: var(--ink-4); margin-top: 1px; }
+    .sb-nav { flex: 1; overflow-y: auto; padding: 12px 8px; }
+    .sb-sec { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); padding: 0 10px; margin: 8px 0 4px; }
+    .sb-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-md); font-size: 13px; font-weight: 500; color: var(--ink-3); text-decoration: none; transition: background .12s, color .12s; margin-bottom: 1px; position: relative; }
+    .sb-item:hover { background: var(--canvas); color: var(--ink); }
+    .sb-item.active { background: rgba(255,96,0,.08); color: var(--orange); font-weight: 600; }
+    .sb-item.active::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; border-radius: 0 2px 2px 0; background: var(--orange); }
+    .sb-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .sb-div { height: 1px; background: var(--line); margin: 8px 10px; }
+    .sb-footer { padding: 12px 8px; border-top: 1px solid var(--line); }
+    .sb-data-badge { display: flex; align-items: center; gap: 5px; margin: 0 10px 8px; padding: 5px 8px; border-radius: var(--r-md); background: var(--canvas); border: 1px solid var(--line); font-size: 10px; font-weight: 600; color: var(--ink-4); }
+    .sb-data-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--orange); }
+    .sb-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
+    .sb-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .sb-user-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+    .sb-user-role { font-size: 11px; color: var(--ink-4); }
+
+    /* ── MAIN ── */
+    .main-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Page header */
+    .page-header { background: var(--ink); padding: 20px 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+    .ph-left { }
+    .ph-badge { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: var(--r-full); padding: 3px 10px; font-size: 10px; font-weight: 600; color: rgba(255,255,255,.5); margin-bottom: 6px; }
+    .ph-title { font-size: 19px; font-weight: 800; letter-spacing: -.5px; color: white; }
+    .ph-title span { color: var(--orange); }
+    .ph-sub { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 2px; }
+    .ph-actions { display: flex; gap: 8px; align-items: center; }
+    .btn-reset { padding: 7px 14px; border-radius: var(--r-md); border: 1px solid rgba(255,255,255,.15); background: transparent; color: rgba(255,255,255,.6); font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all .12s; }
+    .btn-reset:hover { background: rgba(255,255,255,.08); color: white; }
+    .btn-download { padding: 7px 16px; border-radius: var(--r-md); border: none; background: var(--orange); color: white; font-size: 12px; font-weight: 700; font-family: inherit; cursor: pointer; transition: all .12s; display: flex; align-items: center; gap: 6px; }
+    .btn-download:hover { background: #e05500; }
+    .btn-download:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* ── SPLIT BODY ── */
+    .split-body { flex: 1; display: grid; grid-template-columns: 320px 1fr; overflow: hidden; }
+
+    /* Left: data context */
+    .data-panel { background: #f8f8f6; border-right: 1px solid var(--line); overflow-y: auto; padding: 18px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .dp-label { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 2px; }
+    .dp-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; box-shadow: var(--sh1); }
+    .dp-card-title { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .dp-card-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: var(--r-full); background: rgba(0,117,222,.08); color: var(--primary); }
+
+    /* Metric rows */
+    .metric-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0ee; }
+    .metric-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .mr-label { font-size: 11px; color: var(--ink-3); }
+    .mr-value { font-size: 13px; font-weight: 800; color: var(--ink); }
+    .mr-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: var(--r-full); }
+    .b-warn { background: rgba(229,57,53,.10); color: var(--red); }
+    .b-ok   { background: rgba(26,174,57,.10);  color: var(--green); }
+
+    /* Funnel mini */
+    .funnel-list { display: flex; flex-direction: column; gap: 5px; }
+    .funnel-step { display: flex; align-items: center; gap: 8px; }
+    .fs-label { font-size: 10px; color: var(--ink-3); width: 100px; flex-shrink: 0; }
+    .fs-bar-wrap { flex: 1; height: 6px; background: #f0f0ee; border-radius: 3px; overflow: hidden; }
+    .fs-bar { height: 100%; border-radius: 3px; }
+    .fs-pct { font-size: 10px; font-weight: 700; width: 36px; text-align: right; color: var(--ink); flex-shrink: 0; }
+
+    /* Signal chip — clickable to insert into form */
+    .signal-list { display: flex; flex-direction: column; gap: 5px; }
+    .signal-chip { display: flex; align-items: flex-start; gap: 8px; padding: 7px 9px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--canvas); cursor: pointer; transition: border-color .12s, background .12s; }
+    .signal-chip:hover { border-color: var(--orange); background: rgba(255,96,0,.04); }
+    .signal-chip.used { border-color: var(--orange); background: rgba(255,96,0,.06); }
+    .sc-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+    .sc-text { font-size: 11px; color: var(--ink-2); line-height: 1.5; }
+    .sc-hint { font-size: 9px; color: var(--orange); margin-top: 1px; font-weight: 600; }
+
+    /* Right: form */
+    .form-panel { overflow-y: auto; padding: 22px 28px 40px; display: flex; flex-direction: column; gap: 0; }
+
+    .form-section { margin-bottom: 22px; }
+    .form-section-title { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+    .step-badge { width: 18px; height: 18px; border-radius: 50%; background: var(--ink); color: white; font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+    .field { margin-bottom: 14px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .field label { display: block; font-size: 11px; font-weight: 700; color: var(--ink-2); margin-bottom: 5px; }
+    .field .hint { font-size: 10px; color: var(--ink-4); margin-bottom: 5px; line-height: 1.5; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 9px 11px;
+      border: 1px solid var(--line); border-radius: var(--r-md);
+      font-family: 'Inter', sans-serif; font-size: 13px; color: var(--ink);
+      background: var(--surface); outline: none;
+      transition: border-color .12s, box-shadow .12s;
+      resize: vertical;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,96,0,.10);
+    }
+    .field textarea { min-height: 70px; line-height: 1.6; }
+    .field-inline { display: flex; gap: 8px; align-items: flex-start; }
+    .field-inline input { flex: 1; }
+    .field-inline .unit { font-size: 12px; color: var(--ink-4); padding-top: 10px; white-space: nowrap; }
+
+    /* Metric rows for success criteria */
+    .criteria-row { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .criteria-sep { font-size: 11px; color: var(--ink-4); text-align: center; }
+    .add-btn { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: var(--ink-4); border: 1px dashed var(--line); border-radius: var(--r-md); padding: 6px 10px; background: none; cursor: pointer; font-family: inherit; transition: all .12s; }
+    .add-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+    /* Preview */
+    .preview-box { background: #1a1a1c; border-radius: var(--r-lg); padding: 16px 18px; margin-top: 20px; }
+    .preview-label { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .copy-btn { font-size: 10px; font-weight: 600; color: rgba(255,255,255,.4); background: rgba(255,255,255,.06); border: none; border-radius: 5px; padding: 3px 8px; cursor: pointer; font-family: inherit; transition: all .12s; }
+    .copy-btn:hover { background: rgba(255,255,255,.12); color: rgba(255,255,255,.8); }
+    .preview-content { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: rgba(255,255,255,.7); line-height: 1.75; white-space: pre-wrap; word-break: break-all; max-height: 240px; overflow-y: auto; }
+    .preview-content .md-h1 { color: #fff; font-weight: 700; }
+    .preview-content .md-h2 { color: #adb; }
+    .preview-content .md-key { color: #79b8ff; }
+    .preview-content .md-val { color: #f8e45c; }
+
+    /* Save instruction */
+    .save-instruction { margin-top: 14px; padding: 12px 14px; background: rgba(255,96,0,.06); border: 1px solid rgba(255,96,0,.18); border-radius: var(--r-md); }
+    .si-title { font-size: 11px; font-weight: 700; color: var(--orange); margin-bottom: 4px; }
+    .si-steps { font-size: 11px; color: var(--ink-3); line-height: 1.7; }
+    .si-path { font-family: monospace; font-size: 11px; background: rgba(0,0,0,.05); padding: 1px 5px; border-radius: 4px; color: var(--ink-2); }
+
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 2px rgba(26,174,57,.15)} 50%{box-shadow:0 0 0 5px rgba(26,174,57,.05)} }
+  </style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-brand-icon">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="5.5" stroke="white" stroke-width="1.5"/>
+        <path d="M4 7h6M7 4v6" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="sb-brand-name">AI Product Analyst</div>
+      <div class="sb-brand-sub">29CM 개선 우선순위</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-sec">분석</div>
+    <a href="../index.html" class="sb-item">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor"><path d="M7.5 1.5L1 6.5V13h4.5V9.5h4V13H13.5V6.5L7.5 1.5z"/></svg></div>홈
+    </a>
+    <a href="dashboard.html" class="sb-item">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor"><rect x="1" y="1" width="5.5" height="5.5" rx="1"/><rect x="8.5" y="1" width="5.5" height="5.5" rx="1"/><rect x="1" y="8.5" width="5.5" height="5.5" rx="1"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1"/></svg></div>대시보드
+    </a>
+    <a href="voc.html" class="sb-item">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2h11v8H8.5L6 13v-3H2V2z"/></svg></div>VOC 분석
+    </a>
+    <div class="sb-div"></div>
+    <div class="sb-sec">에이전트</div>
+    <a href="hypothesis.html" class="sb-item active">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M7.5 2v4l2.5 2.5M2 7.5a5.5 5.5 0 1011 0 5.5 5.5 0 00-11 0z"/></svg></div>가설 작성
+    </a>
+    <a href="canvas.html" class="sb-item">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="2.5" cy="7.5" r="1.5"/><circle cx="12.5" cy="3" r="1.5"/><circle cx="12.5" cy="12" r="1.5"/><line x1="4" y1="7" x2="11" y2="3.7"/><line x1="4" y1="8" x2="11" y2="11.3"/></svg></div>에이전트 캔버스
+    </a>
+    <div class="sb-div"></div>
+    <div class="sb-sec">결과물</div>
+    <a href="report.html" class="sb-item">
+      <div class="sb-icon"><svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="1" width="11" height="13" rx="1.5"/><line x1="4.5" y1="4.5" x2="10.5" y2="4.5"/><line x1="4.5" y1="7.5" x2="10.5" y2="7.5"/><line x1="4.5" y1="10.5" x2="8" y2="10.5"/></svg></div>과제 설계 리포트
+    </a>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-data-badge"><div class="sb-data-dot"></div>가설 작성 · Agent 연동</div>
+    <div class="sb-user">
+      <div class="sb-avatar">김</div>
+      <div><div class="sb-user-name">김유빈</div><div class="sb-user-role">서비스 기획자 · IT</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main-wrap">
+
+  <div class="page-header">
+    <div class="ph-left">
+      <div class="ph-badge">● Step 1 of 3 — 가설 작성 → 에이전트 검증 → 기획자 검토</div>
+      <div class="ph-title">가설 <span>작성</span></div>
+      <div class="ph-sub">데이터 신호를 참고해 가설을 작성하면 .md 파일로 저장됩니다 · Agent가 자동 검증합니다</div>
+    </div>
+    <div class="ph-actions">
+      <button class="btn-reset" onclick="resetForm()">초기화</button>
+      <button class="btn-download" id="downloadBtn" onclick="downloadHypothesis()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 1v7M3 5.5L6 8.5l3-3"/><path d="M1 10h10"/></svg>
+        .md 파일 저장
+      </button>
+    </div>
+  </div>
+
+  <div class="split-body">
+
+    <!-- ── LEFT: 데이터 컨텍스트 ── -->
+    <div class="data-panel">
+
+      <div class="dp-label">지금 데이터가 말하는 것</div>
+
+      <!-- 핵심 지표 -->
+      <div class="dp-card">
+        <div class="dp-card-title">
+          핵심 지표 요약
+          <span class="dp-card-badge">GA4 · 28일</span>
+        </div>
+        <div class="metric-row">
+          <span class="mr-label">결제 전환율 CVR</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="mr-value">1.09%</span>
+            <span class="mr-badge b-warn">업계 평균 3–5%</span>
+          </div>
+        </div>
+        <div class="metric-row">
+          <span class="mr-label">평균 이탈률</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="mr-value">58.65%</span>
+            <span class="mr-badge b-warn">평균 대비 +10%p</span>
+          </div>
+        </div>
+        <div class="metric-row">
+          <span class="mr-label">총 세션</span>
+          <span class="mr-value">102,572</span>
+        </div>
+        <div class="metric-row">
+          <span class="mr-label">거래 (구매)</span>
+          <span class="mr-value">1,114건</span>
+        </div>
+      </div>
+
+      <!-- 퍼널 이탈 -->
+      <div class="dp-card">
+        <div class="dp-card-title">
+          Amplitude 퍼널 이탈률
+          <span class="dp-card-badge">전체</span>
+        </div>
+        <div class="funnel-list">
+          <div class="funnel-step">
+            <span class="fs-label">홈→상품 상세</span>
+            <div class="fs-bar-wrap"><div class="fs-bar" style="width:32.67%;background:#0075de;opacity:.6;"></div></div>
+            <span class="fs-pct">32.7%</span>
+          </div>
+          <div class="funnel-step">
+            <span class="fs-label">상세→장바구니</span>
+            <div class="fs-bar-wrap"><div class="fs-bar" style="width:34.37%;background:#0075de;opacity:.75;"></div></div>
+            <span class="fs-pct">34.4%</span>
+          </div>
+          <div class="funnel-step">
+            <span class="fs-label">장바구니→결제</span>
+            <div class="fs-bar-wrap"><div class="fs-bar" style="width:57.3%;background:#e53935;"></div></div>
+            <span class="fs-pct" style="color:#e53935;font-weight:800;">57.3%</span>
+          </div>
+          <div class="funnel-step">
+            <span class="fs-label">결제→완료</span>
+            <div class="fs-bar-wrap"><div class="fs-bar" style="width:42.35%;background:#FF6000;"></div></div>
+            <span class="fs-pct" style="color:#FF6000;font-weight:800;">42.4%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VOC 상위 카테고리 -->
+      <div class="dp-card">
+        <div class="dp-card-title">
+          VOC 카테고리 분포
+          <span class="dp-card-badge">166건</span>
+        </div>
+        <div class="funnel-list">
+          <div class="funnel-step">
+            <span class="fs-label">결제·정산</span>
+            <div class="fs-bar-wrap"><div class="fs-bar" style="width:100%;background:#e53935;opacity:.7;"></div></div>
+            <span class="fs-pct">52건</span>
+          </div>
+          <div class="funnel-step">
+            <span class="fs-label">회원가입</span>
+            <div class="fs-bar-wrap"><div class="fs-bar" style="width:90%;background:#FF6000;opacity:.7;"></div></div>
+            <span class="fs-pct">47건</span>
+          </div>
+          <div class="funnel-step">
+            <span class="fs-label">검색·필터</span>
+            <div class="fs-bar-wrap"><div class="fs-bar" style="width:73%;background:#0075de;opacity:.6;"></div></div>
+            <span class="fs-pct">38건</span>
+          </div>
+          <div class="funnel-step">
+            <span class="fs-label">이미지·로딩</span>
+            <div class="fs-bar-wrap"><div class="fs-bar" style="width:60%;background:#6B3FBF;opacity:.6;"></div></div>
+            <span class="fs-pct">31건</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 클릭 가능한 데이터 신호 -->
+      <div class="dp-label">신호 클릭 → 가설에 자동 삽입</div>
+      <div class="dp-card" style="padding:10px;">
+        <div class="signal-list" id="signalList">
+          <div class="signal-chip" onclick="insertSignal(this, '장바구니→결제 시작 이탈률 57.3%', 'background')">
+            <div class="sc-dot" style="background:#e53935;"></div>
+            <div><div class="sc-text">장바구니→결제 시작 이탈 <strong>57.3%</strong> — 퍼널 최고 이탈</div><div class="sc-hint">→ 배경에 삽입</div></div>
+          </div>
+          <div class="signal-chip" onclick="insertSignal(this, '결제 CVR 1.09% (업계 평균 3–5%의 1/3 수준)', 'outcome')">
+            <div class="sc-dot" style="background:#e53935;"></div>
+            <div><div class="sc-text">CVR <strong>1.09%</strong> — 업계 평균 3–5%의 1/3</div><div class="sc-hint">→ 기대 결과에 삽입</div></div>
+          </div>
+          <div class="signal-chip" onclick="insertSignal(this, 'VOC 결제·정산 52건 (전체 1위, 부정 100%)', 'background')">
+            <div class="sc-dot" style="background:#FF6000;"></div>
+            <div><div class="sc-text">VOC 결제·정산 <strong>52건</strong> — 전체 1위, 부정 100%</div><div class="sc-hint">→ 배경에 삽입</div></div>
+          </div>
+          <div class="signal-chip" onclick="insertSignal(this, '회원가입 VOC 47건 (전체 2위)', 'background')">
+            <div class="sc-dot" style="background:#FF6000;"></div>
+            <div><div class="sc-text">VOC 회원가입 <strong>47건</strong> — 전체 2위</div><div class="sc-hint">→ 배경에 삽입</div></div>
+          </div>
+          <div class="signal-chip" onclick="insertSignal(this, '이탈률 58.65% (업계 평균 45–50% 대비 +10%p)', 'background')">
+            <div class="sc-dot" style="background:#0075de;"></div>
+            <div><div class="sc-text">이탈률 <strong>58.65%</strong> — 업계 평균 대비 +10%p</div><div class="sc-hint">→ 배경에 삽입</div></div>
+          </div>
+          <div class="signal-chip" onclick="insertSignal(this, '검색·필터 VOC 38건 (전체 3위), 필터 초기화 버그 반복 언급', 'background')">
+            <div class="sc-dot" style="background:#0075de;"></div>
+            <div><div class="sc-text">검색·필터 VOC <strong>38건</strong> — 필터 초기화 버그 반복</div><div class="sc-hint">→ 배경에 삽입</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /data-panel -->
+
+    <!-- ── RIGHT: 가설 작성 폼 ── -->
+    <div class="form-panel">
+
+      <!-- 기본 정보 -->
+      <div class="form-section">
+        <div class="form-section-title"><div class="step-badge">1</div> 기본 정보</div>
+        <div class="field-row">
+          <div class="field">
+            <label>가설 ID</label>
+            <input type="text" id="hypId" value="HYP-002" placeholder="HYP-002" oninput="updatePreview()">
+          </div>
+          <div class="field">
+            <label>작성자</label>
+            <input type="text" id="author" value="김유빈" placeholder="이름" oninput="updatePreview()">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>관련 데이터 소스</label>
+            <select id="dataSrc" onchange="updatePreview()">
+              <option value="GA4, Amplitude, VOC 전체">GA4 + Amplitude + VOC 전체</option>
+              <option value="GA4, Amplitude">GA4 + Amplitude (정량만)</option>
+              <option value="VOC">VOC (정성만)</option>
+              <option value="GA4">GA4만</option>
+              <option value="Amplitude">Amplitude만</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>우선순위 추정</label>
+            <select id="priority" onchange="updatePreview()">
+              <option value="높음">높음</option>
+              <option value="중간">중간</option>
+              <option value="낮음">낮음</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 가설 본문 -->
+      <div class="form-section">
+        <div class="form-section-title"><div class="step-badge">2</div> 가설 (Hypothesis Statement)</div>
+        <div class="field">
+          <label>원인 (Causal Factor)</label>
+          <div class="hint">무엇이 문제의 원인이라고 생각하나요?</div>
+          <input type="text" id="causal" placeholder="예: 회원가입 단계의 복잡성과 소셜 로그인 미지원" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>영향 받는 지표 (Affected Metric)</label>
+          <div class="hint">원인이 어떤 지표를 저하시키고 있나요?</div>
+          <input type="text" id="metric" placeholder="예: 신규 사용자 전환율 및 회원가입 완료율" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>기대 결과 (Expected Outcome)</label>
+          <div class="hint">개선하면 어떻게 될 것이라 기대하나요?</div>
+          <input type="text" id="outcome" placeholder="예: 소셜 로그인 도입으로 신규 가입 CVR 15–25% 개선" oninput="updatePreview()">
+        </div>
+      </div>
+
+      <!-- 배경 -->
+      <div class="form-section">
+        <div class="form-section-title"><div class="step-badge">3</div> 배경 (Background)</div>
+        <div class="field">
+          <div class="hint">이 가설을 세운 계기, 관찰한 데이터 신호, 사용자 인터뷰 내용 등을 자유롭게 작성하세요. 왼쪽의 데이터 신호를 클릭하면 자동 삽입됩니다.</div>
+          <textarea id="background" rows="5" placeholder="예: GA4에서 신규 사용자 이탈률이 평균 대비 8%p 높게 나타났습니다. 앱스토어 리뷰에서 '소셜 로그인 없음', '회원가입이 너무 복잡하다'는 VOC가 47건으로 전체 2위를 기록했습니다..." oninput="updatePreview()"></textarea>
+        </div>
+      </div>
+
+      <!-- 검증 지표 -->
+      <div class="form-section">
+        <div class="form-section-title"><div class="step-badge">4</div> 검증 지표 (Metrics to Validate)</div>
+        <div class="field">
+          <label>정량 지표 1</label>
+          <input type="text" id="q1" placeholder="예: 신규 사용자 회원가입 완료율" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>정량 지표 2</label>
+          <input type="text" id="q2" placeholder="예: 홈 → 결제 진입까지 이탈률" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>정성 지표 (VOC)</label>
+          <input type="text" id="ql" placeholder="예: VOC 내 회원가입 관련 부정 언급 빈도" oninput="updatePreview()">
+        </div>
+      </div>
+
+      <!-- 성공 기준 -->
+      <div class="form-section">
+        <div class="form-section-title"><div class="step-badge">5</div> 성공 기준 (Success Criteria)</div>
+        <div id="criteriaList">
+          <div class="criteria-row">
+            <input type="text" class="crit-label" placeholder="지표명 (예: 회원가입 완료율)" oninput="updatePreview()">
+            <span class="criteria-sep">현재</span>
+            <input type="text" class="crit-current" placeholder="측정 필요" oninput="updatePreview()">
+            <span class="criteria-sep">→ 목표</span>
+          </div>
+          <div class="criteria-row" style="margin-top:-2px;">
+            <div></div><div></div>
+            <input type="text" class="crit-target" placeholder="30% 개선" oninput="updatePreview()">
+            <div></div>
+          </div>
+        </div>
+        <button class="add-btn" onclick="addCriteria()">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="5.5" y1="1" x2="5.5" y2="10"/><line x1="1" y1="5.5" x2="10" y2="5.5"/></svg>
+          기준 추가
+        </button>
+        <div class="field" style="margin-top:12px;">
+          <label>측정 기간</label>
+          <div class="field-inline">
+            <input type="number" id="testWeeks" value="2" min="1" max="12" oninput="updatePreview()" style="width:80px;">
+            <span class="unit">주 이상 · 통계적 유의성 p &lt; 0.05</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 제약 조건 -->
+      <div class="form-section">
+        <div class="form-section-title"><div class="step-badge">6</div> 제약 조건 (Constraints)</div>
+        <div class="field">
+          <div class="hint">개선안 설계 시 고려해야 할 제약을 적어주세요. Agent의 A/B 테스트 설계에 반영됩니다.</div>
+          <textarea id="constraints" rows="3" placeholder="예: iOS 앱 심사 최대 7일 소요. 소셜 로그인 SDK 선택 시 보안팀 검토 필요. 디자인 가이드라인 준수." oninput="updatePreview()"></textarea>
+        </div>
+      </div>
+
+      <!-- 미리보기 + 저장 안내 -->
+      <div class="preview-box">
+        <div class="preview-label">
+          마크다운 미리보기
+          <button class="copy-btn" onclick="copyMarkdown()">복사</button>
+        </div>
+        <div class="preview-content" id="preview"></div>
+      </div>
+
+      <div class="save-instruction">
+        <div class="si-title">저장 후 다음 단계</div>
+        <div class="si-steps">
+          1. <strong>.md 파일 저장</strong> 버튼을 눌러 파일을 다운로드합니다<br>
+          2. 파일을 <span class="si-path">01_inputs/hypotheses/</span> 폴더에 넣습니다<br>
+          3. Agent를 실행하면 자동으로 검증이 시작됩니다<br>
+          4. 결과물은 <span class="si-path">03_outputs/HYP-XXX/</span>에 저장됩니다<br>
+          5. <span class="si-path">04_review/pending/</span>에서 검토 요청을 확인합니다
+        </div>
+      </div>
+
+    </div><!-- /form-panel -->
+
+  </div><!-- /split-body -->
+</div><!-- /main-wrap -->
+
+<script>
+/* ── 데이터 신호 삽입 ── */
+function insertSignal(chip, text, field) {
+  const el = document.getElementById(field === 'background' ? 'background' : 'outcome');
+  const cur = el.value;
+  el.value = cur ? cur + '\n' + text : text;
+  chip.classList.add('used');
+  updatePreview();
+}
+
+/* ── 기준 추가 ── */
+function addCriteria() {
+  const list = document.getElementById('criteriaList');
+  const div = document.createElement('div');
+  div.style.marginTop = '10px';
+  div.innerHTML = `
+    <div class="criteria-row">
+      <input type="text" class="crit-label" placeholder="지표명" oninput="updatePreview()">
+      <span class="criteria-sep">현재</span>
+      <input type="text" class="crit-current" placeholder="측정 필요" oninput="updatePreview()">
+      <span class="criteria-sep">→ 목표</span>
+    </div>
+    <div class="criteria-row" style="margin-top:-2px;">
+      <div></div><div></div>
+      <input type="text" class="crit-target" placeholder="목표값" oninput="updatePreview()">
+      <div></div>
+    </div>`;
+  list.appendChild(div);
+}
+
+/* ── 마크다운 생성 ── */
+function generateMarkdown() {
+  const id       = v('hypId')      || 'HYP-XXX';
+  const author   = v('author')     || '작성자';
+  const dataSrc  = v('dataSrc')    || 'GA4, Amplitude, VOC 전체';
+  const priority = v('priority')   || '중간';
+  const causal   = v('causal')     || '';
+  const metric   = v('metric')     || '';
+  const outcome  = v('outcome')    || '';
+  const bg       = v('background') || '';
+  const q1       = v('q1')         || '';
+  const q2       = v('q2')         || '';
+  const ql       = v('ql')         || '';
+  const weeks    = v('testWeeks')  || '2';
+  const constraints = v('constraints') || '';
+  const today    = new Date().toISOString().split('T')[0];
+
+  // 성공 기준 수집
+  const labels   = [...document.querySelectorAll('.crit-label')].map(e => e.value);
+  const currents = [...document.querySelectorAll('.crit-current')].map(e => e.value);
+  const targets  = [...document.querySelectorAll('.crit-target')].map(e => e.value);
+  const criteria = labels.map((l,i) =>
+    l ? `- [ ] ${l}: 현재 ${currents[i]||'측정 필요'} → 목표 ${targets[i]||'?'}` : ''
+  ).filter(Boolean).join('\n') || '- [ ] (작성 필요)';
+
+  return `# ${id} — ${causal || '가설 제목'}
+
+## 기본 정보
+
+| 항목 | 내용 |
+|------|------|
+| 가설 ID | ${id} |
+| 작성자 | ${author} |
+| 작성일 | ${today} |
+| 관련 데이터 소스 | ${dataSrc} |
+| 우선순위 추정 | ${priority} |
+
+---
+
+## 가설 (Hypothesis Statement)
+
+\`\`\`
+우리는 [${causal}]이(가)
+       [${metric}]을(를) 저하시키고 있다고 가정한다.
+이를 개선하면 [${outcome}]될 것이다.
+\`\`\`
+
+---
+
+## 배경 (Background)
+
+${bg || '(작성 필요)'}
+
+---
+
+## 검증 지표 (Metrics to Validate)
+
+- **정량 지표 1**: ${q1 || '(작성 필요)'}
+- **정량 지표 2**: ${q2 || '(작성 필요)'}
+- **정성 지표**: ${ql || '(작성 필요)'}
+
+---
+
+## 성공 기준 (Success Criteria)
+
+${criteria}
+- [ ] 측정 기간: ${weeks}주 이상 · 통계적 유의성 p < 0.05
+
+---
+
+## 제약 조건 (Constraints)
+
+${constraints || '(작성 필요)'}
+`;
+}
+
+function v(id) { return document.getElementById(id)?.value?.trim(); }
+
+/* ── 미리보기 업데이트 ── */
+function updatePreview() {
+  const md = generateMarkdown();
+  const el = document.getElementById('preview');
+
+  // 간단한 구문 강조
+  const html = md
+    .replace(/^(# .+)/gm, '<span class="md-h1">$1</span>')
+    .replace(/^(## .+)/gm, '<span class="md-h2">$1</span>')
+    .replace(/\| (\S[^|]*?) \|/g, (m, p) => {
+      const t = p.trim();
+      return t.length < 20 ? `| <span class="md-key">${t}</span> |` : `| ${t} |`;
+    });
+  el.innerHTML = html;
+
+  // 다운로드 버튼 활성화 조건
+  const hasContent = v('causal') && v('metric');
+  document.getElementById('downloadBtn').disabled = !hasContent;
+}
+
+/* ── 다운로드 ── */
+function downloadHypothesis() {
+  const md   = generateMarkdown();
+  const id   = v('hypId') || 'HYP-XXX';
+  const slug = (v('causal') || '가설').replace(/[^가-힣a-zA-Z0-9]/g, '_').substring(0, 20);
+  const blob = new Blob([md], { type: 'text/markdown; charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `${id}_${slug}.md`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ── 복사 ── */
+function copyMarkdown() {
+  navigator.clipboard.writeText(generateMarkdown()).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    const orig = btn.textContent;
+    btn.textContent = '복사됨 ✓';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+/* ── 초기화 ── */
+function resetForm() {
+  if (!confirm('작성한 내용을 초기화할까요?')) return;
+  ['causal','metric','outcome','background','q1','q2','ql','constraints'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('testWeeks').value = '2';
+  document.querySelectorAll('.crit-label, .crit-current, .crit-target').forEach(e => e.value = '');
+  document.querySelectorAll('.signal-chip').forEach(c => c.classList.remove('used'));
+  updatePreview();
+}
+
+// 초기 렌더링
+updatePreview();
+</script>
+</body>
+</html>

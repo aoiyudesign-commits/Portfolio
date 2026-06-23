@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>29CM 분석 대시보드 — AI Product Analyst</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --primary:       #0075de;
+      --canvas-soft:   #f6f5f4;
+      --surface:       #ffffff;
+      --ink:           #000000;
+      --ink-secondary: #31302e;
+      --ink-muted:     #615d59;
+      --ink-faint:     #a39e98;
+      --hairline:      #e6e6e6;
+      --orange:        #FF6000;
+      --red:           #e53935;
+      --green:         #1aae39;
+      --r-md: 8px; --r-lg: 12px; --r-full: 9999px;
+      --shadow-1: 0 0.5px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+      font-size: 14px; color: var(--ink);
+      background: var(--canvas-soft);
+      height: 100vh; overflow: hidden;
+      display: flex;
+    }
+
+    /* ════════════════════════════
+       SIDEBAR
+    ════════════════════════════ */
+    .sidebar {
+      width: 240px; flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--hairline);
+      display: flex; flex-direction: column;
+      height: 100vh; overflow: hidden;
+    }
+
+    /* Brand */
+    .sb-brand {
+      display: flex; align-items: center; gap: 9px;
+      padding: 20px 18px 18px;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .sb-brand-icon {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: var(--ink); display: flex; align-items: center; justify-content: center;
+    }
+    .sb-brand-name { font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: -0.2px; }
+    .sb-brand-sub  { font-size: 10px; color: var(--ink-faint); margin-top: 1px; }
+
+    /* Nav */
+    .sb-nav { flex: 1; overflow-y: auto; padding: 12px 8px; }
+
+    .sb-section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--ink-faint);
+      padding: 0 10px; margin: 8px 0 4px;
+    }
+
+    .sb-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: var(--r-md);
+      font-size: 13px; font-weight: 500; color: var(--ink-muted);
+      text-decoration: none; cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+      margin-bottom: 1px;
+    }
+    .sb-item:hover { background: var(--canvas-soft); color: var(--ink); }
+    .sb-item.active {
+      background: rgba(255,96,0,0.08);
+      color: var(--orange); font-weight: 600;
+    }
+    .sb-item.active .sb-icon svg { color: var(--orange); }
+
+    .sb-icon {
+      width: 20px; height: 20px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-faint);
+    }
+    .sb-item:hover .sb-icon  { color: var(--ink-muted); }
+    .sb-item.active .sb-icon { color: var(--orange); }
+
+    /* Active bar */
+    .sb-item.active {
+      position: relative;
+    }
+    .sb-item.active::before {
+      content: '';
+      position: absolute; left: 0; top: 6px; bottom: 6px;
+      width: 3px; border-radius: 0 2px 2px 0;
+      background: var(--orange);
+    }
+
+    .sb-divider {
+      height: 1px; background: var(--hairline);
+      margin: 8px 10px;
+    }
+
+    /* Footer */
+    .sb-footer {
+      padding: 12px 8px;
+      border-top: 1px solid var(--hairline);
+    }
+    .sb-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: var(--r-md);
+    }
+    .sb-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--ink); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+    }
+    .sb-user-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+    .sb-user-role { font-size: 11px; color: var(--ink-faint); }
+
+    .sb-data-badge {
+      display: flex; align-items: center; gap: 5px;
+      margin: 6px 10px 0;
+      padding: 5px 8px; border-radius: var(--r-md);
+      background: var(--canvas-soft); border: 1px solid var(--hairline);
+      font-size: 10px; font-weight: 600; color: var(--ink-faint);
+    }
+    .sb-data-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 2px rgba(26,174,57,0.15);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 0 2px rgba(26,174,57,0.15); }
+      50%      { box-shadow: 0 0 0 5px rgba(26,174,57,0.05); }
+    }
+
+    /* ════════════════════════════
+       MAIN CONTENT
+    ════════════════════════════ */
+    .main-wrap {
+      flex: 1; overflow-y: auto; height: 100vh;
+      display: flex; flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    .dash-header {
+      background: var(--ink); padding: 28px 32px 24px;
+      flex-shrink: 0;
+    }
+    .dash-header-inner { max-width: 1100px; margin: 0 auto; }
+    .dash-hrow {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .dash-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--r-full); padding: 3px 11px;
+      font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.6);
+      margin-bottom: 8px;
+    }
+    .dash-h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.7px; color: white; margin-bottom: 3px; }
+    .dash-h1 span { color: var(--orange); }
+    .dash-sub { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .date-range { font-size: 11px; color: rgba(255,255,255,0.5); }
+    .date-range strong { color: rgba(255,255,255,0.85); font-weight: 600; }
+
+    .header-metrics {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 1px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--r-lg); overflow: hidden;
+    }
+    .hm-cell { padding: 14px 16px; background: rgba(255,255,255,0.03); }
+    .hm-label { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255,255,255,0.38); margin-bottom: 5px; }
+    .hm-value { font-size: 20px; font-weight: 800; letter-spacing: -0.7px; color: white; margin-bottom: 2px; }
+    .hm-trend { font-size: 10px; font-weight: 700; }
+    .hm-trend.down { color: #ff8a80; }
+    .hm-trend.up   { color: #69f0ae; }
+
+    /* ── BODY ── */
+    .dash-body { max-width: 1100px; margin: 0 auto; padding: 22px 32px 60px; width: 100%; }
+
+    /* ── DATA NOTE ── */
+    .data-note {
+      background: var(--surface); border: 1px solid var(--hairline);
+      border-left: 3px solid var(--orange); border-radius: var(--r-md);
+      padding: 9px 13px; font-size: 11px; color: var(--ink-muted);
+      margin-bottom: 18px;
+    }
+
+    /* ── SECTION LABEL ── */
+    .sec-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--ink-faint);
+      margin-bottom: 10px;
+    }
+
+    /* ── METRIC CARDS ── */
+    .metrics-grid {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      gap: 10px; margin-bottom: 14px; align-items: start;
+    }
+    .metric-card {
+      background: var(--surface); border: 1px solid var(--hairline);
+      border-radius: var(--r-lg); padding: 16px 16px 12px;
+      box-shadow: var(--shadow-1);
+    }
+    .mc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+    .mc-label { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-faint); }
+    .mc-badge {
+      font-size: 10px; font-weight: 700; padding: 1px 6px;
+      border-radius: var(--r-full); display: flex; align-items: center; gap: 2px;
+    }
+    .mc-badge.up   { background: rgba(26,174,57,0.10); color: var(--green); }
+    .mc-badge.down { background: rgba(229,57,53,0.10); color: var(--red); }
+    .mc-value { font-size: 26px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+    .mc-sub   { font-size: 10px; color: var(--ink-faint); margin-top: 2px; }
+    .sp-wrap  { position: relative; height: 40px; margin-top: 10px; }
+    .sp-wrap canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+    /* ── GRIDS ── */
+    .grid-2    { display: grid; grid-template-columns: 1.8fr 1fr; gap: 10px; margin-bottom: 12px; align-items: start; }
+    .grid-3    { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 12px; align-items: start; }
+    .grid-2-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; align-items: start; }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--hairline);
+      border-radius: var(--r-lg); padding: 18px;
+      box-shadow: var(--shadow-1);
+    }
+    .card-ey  { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 2px; }
+    .card-ttl { font-size: 14px; font-weight: 700; color: var(--ink); letter-spacing: -0.2px; margin-bottom: 2px; }
+    .card-sub { font-size: 11px; color: var(--ink-muted); margin-bottom: 14px; }
+    .chart-box { position: relative; height: 190px; }
+
+    /* ── REALTIME ── */
+    .rt-live  { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+    .rt-dot   { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
+    .rt-tag   { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; color: var(--green); }
+    .rt-num   { font-size: 52px; font-weight: 800; letter-spacing: -2.5px; line-height: 1; color: var(--ink); }
+    .rt-unit  { font-size: 11px; color: var(--ink-muted); margin-top: 2px; margin-bottom: 14px; }
+    .rt-bl    { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+    .rt-bars  { display: flex; align-items: flex-end; gap: 2px; height: 36px; margin-bottom: 14px; }
+    .rt-bar   { flex: 1; background: rgba(0,117,222,0.12); border-radius: 2px 2px 0 0; }
+    .rt-bar.hi{ background: var(--primary); }
+    .rt-cl    { display: flex; flex-direction: column; gap: 5px; }
+    .rt-cr    { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+    .rt-cn    { flex: 1; color: var(--ink-secondary); font-weight: 500; }
+    .rt-bw    { width: 70px; height: 3px; background: var(--canvas-soft); border-radius: 2px; overflow: hidden; }
+    .rt-bv    { height: 100%; background: var(--primary); border-radius: 2px; }
+    .rt-nv    { width: 20px; text-align: right; font-weight: 700; color: var(--ink); }
+
+    /* ── CHANNEL ── */
+    .ch-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--canvas-soft); font-size: 11px; }
+    .ch-row:last-child { border-bottom: none; }
+    .ch-name { flex: 1; color: var(--ink-secondary); font-weight: 500; }
+    .ch-bw   { width: 64px; height: 4px; background: var(--canvas-soft); border-radius: 2px; overflow: hidden; }
+    .ch-bv   { height: 100%; background: var(--primary); border-radius: 2px; }
+    .ch-num  { width: 36px; text-align: right; font-weight: 700; color: var(--ink); font-size: 11px; }
+    .ch-dl   { width: 42px; text-align: right; font-size: 10px; font-weight: 600; }
+    .ch-dl.up { color: var(--green); } .ch-dl.down { color: var(--red); }
+
+    /* ── PAGE TABLE ── */
+    .pg-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--canvas-soft); font-size: 11px; }
+    .pg-row:last-child { border-bottom: none; }
+    .pg-i  { width: 12px; font-size: 9px; font-weight: 700; color: var(--ink-faint); flex-shrink: 0; }
+    .pg-n  { flex: 1; color: var(--ink-secondary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pg-s  { width: 42px; text-align: right; font-weight: 700; color: var(--ink); }
+    .pg-b  { width: 40px; text-align: right; font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 4px; }
+    .pg-b.h { background: rgba(229,57,53,0.10); color: var(--red); }
+    .pg-b.m { background: rgba(255,96,0,0.10); color: var(--orange); }
+    .pg-b.l { background: rgba(26,174,57,0.10); color: var(--green); }
+
+    /* ── AMPLITUDE STATS ── */
+    .amp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+    .amp-cell { background: var(--canvas-soft); border: 1px solid var(--hairline); border-radius: var(--r-md); padding: 11px; }
+    .amp-label { font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 2px; }
+    .amp-value { font-size: 18px; font-weight: 800; letter-spacing: -0.7px; color: var(--ink); }
+    .amp-sub   { font-size: 10px; color: var(--ink-muted); }
+    .amp-insight { display: flex; align-items: flex-start; gap: 5px; font-size: 11px; color: var(--ink-secondary); line-height: 1.55; padding: 4px 0; border-bottom: 1px solid var(--canvas-soft); }
+    .amp-insight:last-child { border-bottom: none; }
+    .amp-arrow { color: var(--orange); font-weight: 700; flex-shrink: 0; }
+
+    /* ── LOOKER ── */
+    .live-card {
+      background: var(--surface); border: 1px solid var(--hairline);
+      border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-1);
+      margin-bottom: 12px;
+    }
+    .live-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 16px; border-bottom: 1px solid var(--hairline);
+    }
+    .live-hd-l { display: flex; align-items: center; gap: 9px; }
+    .live-sd   { width: 7px; height: 7px; border-radius: 50%; background: var(--hairline); }
+    .live-sd.on{ background: var(--green); animation: pulse 2s ease-in-out infinite; }
+    .live-ey   { font-size: 9px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-faint); }
+    .live-ttl  { font-size: 13px; font-weight: 700; color: var(--ink); }
+    .live-hd-r { display: flex; gap: 7px; }
+    .btn-connect { font-family: inherit; font-size: 12px; font-weight: 600; background: var(--primary); color: white; border: none; border-radius: var(--r-full); padding: 5px 13px; cursor: pointer; }
+    .btn-connect:hover { background: #005bab; }
+    .btn-sm { font-family: inherit; font-size: 11px; font-weight: 500; background: transparent; color: var(--ink-muted); border: 1px solid var(--hairline); border-radius: var(--r-full); padding: 4px 11px; cursor: pointer; }
+    .btn-sm:hover { border-color: #c0bdb8; color: var(--ink); }
+    .setup-p { padding: 16px; }
+    .setup-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .setup-step { display: flex; align-items: flex-start; gap: 9px; background: var(--canvas-soft); border: 1px solid var(--hairline); border-radius: var(--r-md); padding: 10px 12px; }
+    .step-n { width: 18px; height: 18px; border-radius: 50%; background: var(--ink); color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; flex-shrink: 0; }
+    .step-t { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 1px; }
+    .step-d { font-size: 11px; color: var(--ink-muted); line-height: 1.5; }
+    .step-lk{ font-size: 11px; color: var(--primary); font-weight: 600; text-decoration: none; }
+    .url-row{ display: flex; gap: 7px; }
+    .url-in { flex: 1; font-family: inherit; font-size: 12px; background: var(--canvas-soft); border: 1.5px solid var(--hairline); border-radius: var(--r-md); padding: 8px 12px; color: var(--ink); outline: none; }
+    .url-in:focus { border-color: var(--primary); }
+    .url-in::placeholder { color: var(--ink-faint); }
+    .empty-st { padding: 32px 16px; text-align: center; }
+    .chrome-b { display: flex; align-items: center; gap: 11px; padding: 9px 14px; background: #f0eeec; border-bottom: 1px solid var(--hairline); }
+    .ch-dots { display: flex; gap: 5px; }
+    .ch-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .ch-dot.r { background: #ff5f57; } .ch-dot.y { background: #ffbd2e; } .ch-dot.g { background: #28c840; }
+    .ch-url { flex: 1; background: rgba(255,255,255,0.75); border: 1px solid rgba(0,0,0,0.07); border-radius: 4px; padding: 3px 9px; font-size: 10px; color: var(--ink-muted); display: flex; align-items: center; gap: 5px; }
+    .ch-url-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+    .ch-acts { display: flex; gap: 5px; }
+    .looker-iframe { display: block; width: 100%; height: 620px; border: none; }
+
+    /* ── PRIORITY ── */
+    .pri-list { display: flex; flex-direction: column; gap: 7px; }
+    .pri-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 13px; background: var(--canvas-soft); border: 1px solid var(--hairline); border-radius: var(--r-md); transition: border-color .12s; }
+    .pri-item:hover { border-color: rgba(255,96,0,.3); }
+    .pri-rk  { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+    .pri-rk.d{ background: var(--ink-faint); }
+    .pri-bd  { flex: 1; }
+    .pri-ttl { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+    .pri-ds  { font-size: 11px; color: var(--ink-muted); line-height: 1.5; }
+    .pri-tags{ display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+    .tag     { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: var(--r-full); }
+    .tag.h   { background: rgba(229,57,53,.10); color: var(--red); }
+    .tag.m   { background: rgba(255,96,0,.10); color: var(--orange); }
+    .tag.ga4 { background: rgba(0,117,222,.08); color: var(--primary); }
+    .tag.voc { background: rgba(26,174,57,.10); color: var(--green); }
+    .tag.amp { background: rgba(107,63,191,.10); color: #6B3FBF; }
+    .pri-sc  { font-size: 10px; font-weight: 700; color: var(--ink-faint); white-space: nowrap; }
+
+    /* ── AI ── */
+    .ai-box { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-lg); padding: 22px; box-shadow: var(--shadow-1); }
+    .ai-steps-v { display: flex; flex-direction: column; gap: 7px; margin: 14px 0 18px; }
+    .ai-step { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: var(--ink-secondary); }
+    .ai-dot  { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,96,0,.10); color: var(--orange); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+    .ai-btn  { display: inline-flex; align-items: center; gap: 7px; background: var(--canvas-soft); color: var(--ink-faint); border: 1.5px dashed var(--hairline); padding: 10px 22px; border-radius: var(--r-full); cursor: not-allowed; font-size: 12px; font-weight: 600; font-family: inherit; }
+    .ai-note { font-size: 11px; color: var(--ink-faint); margin-top: 7px; }
+
+    /* ── FOOTER ── */
+    footer { border-top: 1px solid var(--hairline); padding: 16px 32px; text-align: center; font-size: 11px; color: var(--ink-faint); flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<!-- ════ SIDEBAR ════ -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-brand-icon">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="5.5" stroke="white" stroke-width="1.5"/>
+        <path d="M4 7h6M7 4v6" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="sb-brand-name">AI Product Analyst</div>
+      <div class="sb-brand-sub">29CM 개선 우선순위</div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section-label">메뉴</div>
+
+    <a href="../index.html" class="sb-item">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor">
+          <path d="M7.5 1.5L1 6.5V13h4.5V9.5h4V13H13.5V6.5L7.5 1.5z"/>
+        </svg>
+      </div>
+      홈
+    </a>
+
+    <a href="dashboard.html" class="sb-item active">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor">
+          <rect x="1" y="1" width="5.5" height="5.5" rx="1"/>
+          <rect x="8.5" y="1" width="5.5" height="5.5" rx="1"/>
+          <rect x="1" y="8.5" width="5.5" height="5.5" rx="1"/>
+          <rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1"/>
+        </svg>
+      </div>
+      대시보드
+    </a>
+
+    <a href="voc.html" class="sb-item">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M2 2h11v8H8.5L6 13v-3H2V2z"/>
+        </svg>
+      </div>
+      VOC 분석
+    </a>
+
+    <div class="sb-divider"></div>
+    <div class="sb-section-label">에이전트</div>
+
+    <a href="hypothesis.html" class="sb-item">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M7.5 2v4l2.5 2.5M2 7.5a5.5 5.5 0 1011 0 5.5 5.5 0 00-11 0z"/>
+        </svg>
+      </div>
+      가설 작성
+    </a>
+
+    <a href="canvas.html" class="sb-item">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="2.5" cy="7.5" r="1.5"/>
+          <circle cx="12.5" cy="3" r="1.5"/>
+          <circle cx="12.5" cy="12" r="1.5"/>
+          <line x1="4" y1="7" x2="11" y2="3.7"/>
+          <line x1="4" y1="8" x2="11" y2="11.3"/>
+        </svg>
+      </div>
+      에이전트 캔버스
+    </a>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-section-label">결과물</div>
+
+    <a href="report.html" class="sb-item">
+      <div class="sb-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <rect x="2" y="1" width="11" height="13" rx="1.5"/>
+          <line x1="4.5" y1="4.5" x2="10.5" y2="4.5"/>
+          <line x1="4.5" y1="7.5" x2="10.5" y2="7.5"/>
+          <line x1="4.5" y1="10.5" x2="8" y2="10.5"/>
+        </svg>
+      </div>
+      과제 설계 리포트
+    </a>
+
+  </nav>
+
+  <div class="sb-footer">
+    <div class="sb-data-badge">
+      <div class="sb-data-dot"></div>
+      GA4 Demo · Amplitude Demo
+    </div>
+    <div class="sb-user" style="margin-top:8px;">
+      <div class="sb-avatar">김</div>
+      <div>
+        <div class="sb-user-name">김유빈</div>
+        <div class="sb-user-role">서비스 기획자 · IT</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ════ MAIN ════ -->
+<div class="main-wrap">
+
+  <!-- Header -->
+  <div class="dash-header">
+    <div class="dash-header-inner">
+      <div class="dash-hrow">
+        <div>
+          <div class="dash-badge">● AI Product Analyst Agent · 분석 대상: 29CM</div>
+          <div class="dash-h1">개선 우선순위 <span>대시보드</span></div>
+          <div class="dash-sub">GA4 Demo · Amplitude Demo · 29CM 앱 리뷰 · 커뮤니티 VOC</div>
+        </div>
+        <div class="date-range">분석 기간&nbsp;&nbsp;<strong>2026년 5월 26일 – 6월 22일</strong></div>
+      </div>
+      <div class="header-metrics">
+        <div class="hm-cell">
+          <div class="hm-label">총 세션수</div>
+          <div class="hm-value">102,572</div>
+          <div class="hm-trend down">▼ 8.3%</div>
+        </div>
+        <div class="hm-cell">
+          <div class="hm-label">이탈률</div>
+          <div class="hm-value">58.65%</div>
+          <div class="hm-trend down">▼ 2.1%p</div>
+        </div>
+        <div class="hm-cell">
+          <div class="hm-label">거래</div>
+          <div class="hm-value">1,114</div>
+          <div class="hm-trend down">▼ 12.4%</div>
+        </div>
+        <div class="hm-cell">
+          <div class="hm-label">구매 수익</div>
+          <div class="hm-value">$167,702</div>
+          <div class="hm-trend down">▼ 9.8%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="dash-body">
+
+    <div class="data-note">
+      <strong>데이터 안내</strong> — 정량 데이터는 GA4 Demo · Amplitude Demo 기반입니다. 정성 데이터는 실제 29CM 앱 리뷰 · 커뮤니티 VOC입니다. 정량 신호는 반드시 정성 VOC 교차 검증 후 우선순위를 확정합니다.
+    </div>
+
+    <!-- 지표 카드 -->
+    <div class="sec-label">핵심 지표 (일별 추이 · 최근 14일)</div>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="mc-top"><div class="mc-label">세션수</div><div class="mc-badge down">▼ 8.3%</div></div>
+        <div class="mc-value">102,572</div>
+        <div class="mc-sub">30일 누적</div>
+        <div class="sp-wrap"><canvas id="spS"></canvas></div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-top"><div class="mc-label">이탈률</div><div class="mc-badge down">▼ 2.1%p</div></div>
+        <div class="mc-value">58.65%</div>
+        <div class="mc-sub">전월 60.75%</div>
+        <div class="sp-wrap"><canvas id="spB"></canvas></div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-top"><div class="mc-label">거래</div><div class="mc-badge down">▼ 12.4%</div></div>
+        <div class="mc-value">1,114</div>
+        <div class="mc-sub">30일 누적</div>
+        <div class="sp-wrap"><canvas id="spT"></canvas></div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-top"><div class="mc-label">VOC 수집</div><div class="mc-badge up">▲ 신규</div></div>
+        <div class="mc-value">166건</div>
+        <div class="mc-sub">리뷰 95 · 커뮤니티 71</div>
+        <div class="sp-wrap"><canvas id="spV"></canvas></div>
+      </div>
+    </div>
+
+    <!-- 세션 트렌드 + 실시간 -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-ey">GA4 Demo Dataset</div>
+        <div class="card-ttl">세션 트렌드</div>
+        <div class="card-sub">일별 세션수 · 최근 28일</div>
+        <div class="chart-box"><canvas id="sessionChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="rt-live"><div class="rt-dot"></div><div class="rt-tag">실시간</div></div>
+        <div class="rt-num" id="rtNum">112</div>
+        <div class="rt-unit">지난 30분 활성 사용자</div>
+        <div class="rt-bl">분당 활성 사용자</div>
+        <div class="rt-bars" id="rtBars"></div>
+        <div class="rt-cl" id="rtCl"></div>
+      </div>
+    </div>
+
+    <!-- 채널 · 퍼널 · VOC -->
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-ey">트래픽 채널</div>
+        <div class="card-ttl">채널별 세션수</div>
+        <div class="card-sub">기본 채널 그룹 · 30일</div>
+        <div id="chList"></div>
+      </div>
+      <div class="card">
+        <div class="card-ey">GA4 · Amplitude</div>
+        <div class="card-ttl">이벤트 퍼널</div>
+        <div class="card-sub">구매 흐름 단계별</div>
+        <div class="chart-box"><canvas id="funnelChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-ey">29CM 리뷰 · 커뮤니티 VOC</div>
+        <div class="card-ttl">불편 카테고리</div>
+        <div class="card-sub">총 166건 수집</div>
+        <div class="chart-box"><canvas id="vocChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- 페이지 · Amplitude -->
+    <div class="grid-2-eq">
+      <div class="card">
+        <div class="card-ey">GA4 · 페이지 분석</div>
+        <div class="card-ttl">페이지별 이탈률</div>
+        <div class="card-sub">세션수 기준 상위 10개</div>
+        <div id="pgList"></div>
+      </div>
+      <div class="card">
+        <div class="card-ey">Amplitude Demo Data</div>
+        <div class="card-ttl">사용자 행동 인사이트</div>
+        <div class="card-sub">이탈 행동 흐름 분석</div>
+        <div class="amp-grid">
+          <div class="amp-cell"><div class="amp-label">검색 세션</div><div class="amp-value">59.1%</div><div class="amp-sub">6,234 세션</div></div>
+          <div class="amp-cell"><div class="amp-label">필터 사용</div><div class="amp-value">36.9%</div><div class="amp-sub">3,891 세션</div></div>
+          <div class="amp-cell"><div class="amp-label">평균 세션</div><div class="amp-value">4:32</div><div class="amp-sub">분:초</div></div>
+          <div class="amp-cell"><div class="amp-label">재방문율</div><div class="amp-value">34.2%</div><div class="amp-sub">3,605명</div></div>
+        </div>
+        <div>
+          <div class="amp-insight"><span class="amp-arrow">→</span>상세 페이지 뒤로가기 이벤트 36.2% — 이탈 주요 원인</div>
+          <div class="amp-insight"><span class="amp-arrow">→</span>장바구니 후 결제 미진행 68%가 로그인 화면에서 이탈</div>
+          <div class="amp-insight"><span class="amp-arrow">→</span>필터 사용 전환율(12.4%) = 미사용(5.1%)의 2.4배</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Looker Studio 라이브 -->
+    <div class="sec-label">실시간 GA4 데이터 · Looker Studio 연동</div>
+    <div class="live-card">
+      <div class="live-hd">
+        <div class="live-hd-l">
+          <div class="live-sd" id="liveDot"></div>
+          <div><div class="live-ey">Looker Studio · GA4 Demo</div><div class="live-ttl">라이브 GA4 리포트</div></div>
+        </div>
+        <div class="live-hd-r" id="liveHdR">
+          <button class="btn-connect" onclick="showSetup()">+ 연결 설정</button>
+        </div>
+      </div>
+      <div id="setupP" class="setup-p" style="display:none;">
+        <div class="setup-steps">
+          <div class="setup-step"><div class="step-n">1</div><div><div class="step-t">GA4 Demo 접근</div><div class="step-d"><a class="step-lk" href="https://support.google.com/analytics/answer/6367342" target="_blank">데모 계정 신청 →</a></div></div></div>
+          <div class="setup-step"><div class="step-n">2</div><div><div class="step-t">Looker Studio 접속</div><div class="step-d"><a class="step-lk" href="https://lookerstudio.google.com" target="_blank">새 보고서 만들기 →</a></div></div></div>
+          <div class="setup-step"><div class="step-n">3</div><div><div class="step-t">데이터 소스 연결</div><div class="step-d">Google Analytics → <strong>Google Merch Shop</strong></div></div></div>
+          <div class="setup-step"><div class="step-n">4</div><div><div class="step-t">공유 → 보고서 삽입</div><div class="step-d">임베드 URL 복사 후 아래 입력</div></div></div>
+        </div>
+        <div style="margin-bottom:7px;font-size:11px;color:var(--ink-muted);">Looker Studio 임베드 URL 붙여넣기</div>
+        <div class="url-row">
+          <input id="urlIn" class="url-in" type="url" placeholder="https://lookerstudio.google.com/embed/reporting/..."/>
+          <button class="btn-connect" onclick="connectLooker()">연결하기</button>
+          <button class="btn-sm" onclick="hideSetup()">취소</button>
+        </div>
+      </div>
+      <div id="emptyS" class="empty-st">
+        <div style="font-size:26px;margin-bottom:9px;">📊</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:5px;">Looker Studio 리포트 연결</div>
+        <div style="font-size:11px;color:var(--ink-muted);margin-bottom:16px;">GA4 Demo Account를 연결하면 실제 이커머스 데이터를 라이브로 볼 수 있습니다.</div>
+        <button class="btn-connect" onclick="showSetup()">+ 연결 설정</button>
+      </div>
+      <div id="iframeC" style="display:none;">
+        <div class="chrome-b">
+          <div class="ch-dots"><div class="ch-dot r"></div><div class="ch-dot y"></div><div class="ch-dot g"></div></div>
+          <div class="ch-url"><div class="ch-url-dot"></div>lookerstudio.google.com · GA4 — Google Merch Shop (Demo)</div>
+          <div class="ch-acts"><button class="btn-sm" onclick="reloadIframe()">새로고침</button><button class="btn-sm" onclick="disconnectLooker()">해제</button></div>
+        </div>
+        <iframe id="lookerIframe" class="looker-iframe" allowfullscreen></iframe>
+      </div>
+    </div>
+
+    <!-- 개선 우선순위 + AI -->
+    <div class="grid-2-eq">
+      <div class="card">
+        <div class="card-ey">영향 사용자 수 → 핵심 퍼널 → 이탈률 → VOC</div>
+        <div class="card-ttl">개선 우선순위 Top 5</div>
+        <div class="card-sub">판단 기준 4단계 · 정성 교차 검증 완료</div>
+        <div class="pri-list">
+          <div class="pri-item"><div class="pri-rk">1</div><div class="pri-bd"><div class="pri-ttl">장바구니 → 결제 전환 개선</div><div class="pri-ds">581 세션 이탈 · 핵심 구매 퍼널 직결</div><div class="pri-tags"><span class="tag h">영향도 높음</span><span class="tag ga4">GA4</span><span class="tag voc">VOC 3위</span></div></div><div class="pri-sc">1순위</div></div>
+          <div class="pri-item"><div class="pri-rk">2</div><div class="pri-bd"><div class="pri-ttl">회원가입 프로세스 간소화</div><div class="pri-ds">VOC 1위 47건 · 전환 퍼널 진입 직결</div><div class="pri-tags"><span class="tag h">영향도 높음</span><span class="tag voc">VOC 1위</span><span class="tag ga4">GA4</span></div></div><div class="pri-sc">2순위</div></div>
+          <div class="pri-item"><div class="pri-rk">3</div><div class="pri-bd"><div class="pri-ttl">상품 상세 → 장바구니 전환 개선</div><div class="pri-ds">2,556 세션 이탈 · 퍼널 최대 이탈</div><div class="pri-tags"><span class="tag h">영향도 높음</span><span class="tag ga4">GA4</span><span class="tag amp">Amplitude</span></div></div><div class="pri-sc">3순위</div></div>
+          <div class="pri-item"><div class="pri-rk d">4</div><div class="pri-bd"><div class="pri-ttl">상품 이미지 · 로딩 속도 최적화</div><div class="pri-ds">VOC 4위 31건 · 상세 이탈 원인</div><div class="pri-tags"><span class="tag m">영향도 중간</span><span class="tag voc">VOC 4위</span><span class="tag amp">Amplitude</span></div></div><div class="pri-sc">4순위</div></div>
+          <div class="pri-item"><div class="pri-rk d">5</div><div class="pri-bd"><div class="pri-ttl">검색 · 필터 UX 개선</div><div class="pri-ds">VOC 3위 38건 · 검색 이탈률 41%</div><div class="pri-tags"><span class="tag m">영향도 중간</span><span class="tag voc">VOC 3위</span><span class="tag amp">Amplitude</span></div></div><div class="pri-sc">5순위</div></div>
+        </div>
+      </div>
+
+      <div class="ai-box">
+        <div class="card-ey">AI 분석 실행</div>
+        <div class="card-ttl">AI 자동 분석</div>
+        <div class="card-sub">Claude AI가 판단 기준을 적용해 우선순위 보고서와 가설 초안을 생성합니다.</div>
+        <div class="ai-steps-v">
+          <div class="ai-step"><div class="ai-dot">1</div>GA4 퍼널 분석</div>
+          <div class="ai-step"><div class="ai-dot">2</div>Amplitude 이탈 분석</div>
+          <div class="ai-step"><div class="ai-dot">3</div>VOC 교차 검증</div>
+          <div class="ai-step"><div class="ai-dot">4</div>우선순위 + 가설 생성</div>
+        </div>
+        <button class="ai-btn" disabled>AI 분석 실행하기</button>
+        <div class="ai-note">Claude API 키 연동 시 활성화됩니다.</div>
+      </div>
+    </div>
+
+  </div><!-- /dash-body -->
+
+  <footer>
+    <p>AI Product Analyst Agent — 김유빈 · 서비스 기획자 · IT · 분석 대상: 29CM</p>
+  </footer>
+
+</div><!-- /main-wrap -->
+
+<script>
+/* ── Looker Studio ── */
+const SK = 'lookerStudioUrl';
+function showSetup()  { document.getElementById('emptyS').style.display='none'; document.getElementById('setupP').style.display='block'; document.getElementById('iframeC').style.display='none'; }
+function hideSetup()  { document.getElementById('setupP').style.display='none'; const s=localStorage.getItem(SK); if(s) showFrame(s); else document.getElementById('emptyS').style.display='block'; }
+function connectLooker() {
+  let u = document.getElementById('urlIn').value.trim(); if(!u) return;
+  if(u.includes('lookerstudio.google.com/reporting/')) u=u.replace('lookerstudio.google.com/reporting/','lookerstudio.google.com/embed/reporting/');
+  localStorage.setItem(SK,u); showFrame(u);
+}
+function showFrame(u) {
+  document.getElementById('setupP').style.display='none'; document.getElementById('emptyS').style.display='none'; document.getElementById('iframeC').style.display='block';
+  document.getElementById('lookerIframe').src=u; document.getElementById('liveDot').classList.add('on');
+  document.getElementById('liveHdR').innerHTML=`<span style="font-size:11px;color:var(--green);font-weight:600;">● 연결됨</span><button class="btn-sm" onclick="showSetup()">URL 변경</button>`;
+}
+function disconnectLooker() {
+  localStorage.removeItem(SK); document.getElementById('iframeC').style.display='none'; document.getElementById('emptyS').style.display='block';
+  document.getElementById('liveDot').classList.remove('on'); document.getElementById('liveHdR').innerHTML=`<button class="btn-connect" onclick="showSetup()">+ 연결 설정</button>`;
+  document.getElementById('lookerIframe').src='';
+}
+function reloadIframe() { const f=document.getElementById('lookerIframe'); f.src=f.src; }
+(function(){ const s=localStorage.getItem(SK); if(s) showFrame(s); })();
+
+/* ── 스파크라인 ── */
+function sp(id, data, color) {
+  new Chart(document.getElementById(id).getContext('2d'), {
+    type:'line', data:{ labels:data.map((_,i)=>i), datasets:[{data, borderColor:color, borderWidth:1.5, pointRadius:0, tension:0.4, fill:true, backgroundColor:color.replace('rgb','rgba').replace(')',',0.08)')}]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}}, animation:{duration:600} }
+  });
+}
+sp('spS',[3380,3120,3510,3840,4020,3770,3290,3050,3420,3680,3550,3410,3190,3250],'rgb(0,117,222)');
+sp('spB',[61.2,59.8,62.4,57.9,55.6,58.1,61.8,62.5,59.7,57.3,58.2,59.6,57.8,56.4],'rgb(229,57,53)');
+sp('spT',[34,29,38,44,51,46,35,31,36,43,48,41,37,40],'rgb(26,174,57)');
+sp('spV',[8,12,6,15,10,18,9,14,11,16,13,20,17,19],'rgb(255,96,0)');
+
+/* ── 세션 차트 ── */
+const days=['5/26','5/27','5/28','5/29','5/30','5/31','6/1','6/2','6/3','6/4','6/5','6/6','6/7','6/8','6/9','6/10','6/11','6/12','6/13','6/14','6/15','6/16','6/17','6/18','6/19','6/20','6/21','6/22'];
+new Chart(document.getElementById('sessionChart').getContext('2d'),{
+  type:'line',data:{labels:days,datasets:[{label:'세션수',data:[3380,3120,3510,3840,4020,4180,3770,3290,3050,3420,3680,3550,3880,4250,3960,3720,3410,3050,3190,3480,3620,3310,3250,3140,3070,2980,2840,2390],borderColor:'rgb(0,117,222)',backgroundColor:'rgba(0,117,222,0.07)',borderWidth:2,pointRadius:0,tension:0.4,fill:true}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:c=>` ${c.parsed.y.toLocaleString()}`}}},scales:{x:{grid:{color:'#f6f5f4'},ticks:{font:{size:9,family:'Inter'},color:'#a39e98',maxTicksLimit:8}},y:{grid:{color:'#f6f5f4'},ticks:{font:{size:9,family:'Inter'},color:'#a39e98'},beginAtZero:false}}}
+});
+
+/* ── 실시간 ── */
+const bData=Array.from({length:30},(_,i)=>Math.round(2+Math.random()*5+(i>20?2:0)));
+const bEl=document.getElementById('rtBars');
+bData.forEach((v,i)=>{const b=document.createElement('div');b.className='rt-bar'+(i===29?' hi':'');b.style.height=(v/8*100)+'%';bEl.appendChild(b);});
+const countries=[{n:'미국',v:52,p:100},{n:'캐나다',v:14,p:27},{n:'일본',v:11,p:21},{n:'인도',v:8,p:15}];
+const cEl=document.getElementById('rtCl');
+countries.forEach(c=>{cEl.innerHTML+=`<div class="rt-cr"><div class="rt-cn">${c.n}</div><div class="rt-bw"><div class="rt-bv" style="width:${c.p}%"></div></div><div class="rt-nv">${c.v}</div></div>`;});
+let rv=112;
+setInterval(()=>{rv+=Math.round((Math.random()-.5)*6);rv=Math.max(80,Math.min(150,rv));document.getElementById('rtNum').textContent=rv;},3000);
+
+/* ── 채널 ── */
+const chs=[{n:'Organic Search',s:43200,d:'-26.0%',t:'down'},{n:'Direct',s:13000,d:'-36.8%',t:'down'},{n:'Paid Search',s:15900,d:'+8.7%',t:'up'},{n:'Unassigned',s:11700,d:'+10.7%',t:'up'},{n:'Cross-network',s:11600,d:'+16.1%',t:'up'},{n:'Referral',s:3550,d:'-38.1%',t:'down'},{n:'Organic Social',s:1300,d:'-32.6%',t:'down'}];
+const mx=Math.max(...chs.map(c=>c.s));
+chs.forEach(c=>{document.getElementById('chList').innerHTML+=`<div class="ch-row"><div class="ch-name">${c.n}</div><div class="ch-bw"><div class="ch-bv" style="width:${c.s/mx*100}%"></div></div><div class="ch-num">${(c.s/1000).toFixed(1)}만</div><div class="ch-dl ${c.t}">${c.d}</div></div>`;});
+
+/* ── 퍼널 차트 ── */
+new Chart(document.getElementById('funnelChart').getContext('2d'),{
+  type:'bar',data:{labels:['page_view','view_item','add_to_cart','checkout','purchase'],datasets:[{data:[302400,124800,52100,18300,8420],backgroundColor:['#FF6000','rgba(255,96,0,.75)','rgba(255,96,0,.55)','rgba(255,96,0,.38)','rgba(255,96,0,.22)'],borderRadius:4,borderSkipped:false}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y.toLocaleString()}`}}},scales:{x:{grid:{display:false},ticks:{font:{size:9,family:'Inter'},color:'#a39e98'}},y:{grid:{color:'#f6f5f4'},ticks:{font:{size:9,family:'Inter'},color:'#a39e98'}}}}
+});
+
+/* ── VOC 차트 ── */
+new Chart(document.getElementById('vocChart').getContext('2d'),{
+  type:'bar',data:{labels:['결제·정산','회원가입','검색·필터','이미지·로딩','교환·환불'],datasets:[{data:[52,47,38,31,28],backgroundColor:['#FF6000','rgba(255,96,0,.75)','rgba(255,96,0,.55)','rgba(255,96,0,.38)','rgba(255,96,0,.22)'],borderRadius:4,borderSkipped:false}]},
+  options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.x}건`}}},scales:{x:{grid:{color:'#f6f5f4'},ticks:{font:{size:9,family:'Inter'},color:'#a39e98'}},y:{grid:{display:false},ticks:{font:{size:10,family:'Inter'},color:'#31302e'}}}}
+});
+
+/* ── 페이지 ── */
+const pgs=[{n:'Home',s:75287,b:66.59,l:'h'},{n:'(not set)',s:30312,b:97.95,l:'h'},{n:'New | Google Merch Shop',s:11826,b:15.07,l:'l'},{n:'Google Merch Shop',s:8183,b:23.92,l:'l'},{n:"Men's / Unisex",s:7336,b:11.00,l:'l'},{n:'Sale | Google Merch',s:6900,b:35.10,l:'m'},{n:'Apparel | Google Merch',s:6100,b:32.10,l:'m'},{n:'Bags',s:5400,b:28.40,l:'m'},{n:'YouTube | Shop By Brand',s:4800,b:41.20,l:'m'},{n:'Drinkware',s:4200,b:18.60,l:'l'}];
+pgs.forEach((p,i)=>{document.getElementById('pgList').innerHTML+=`<div class="pg-row"><div class="pg-i">${i+1}</div><div class="pg-n">${p.n}</div><div class="pg-s">${p.s.toLocaleString()}</div><div class="pg-b ${p.l}">${p.b}%</div></div>`;});
+</script>
+</body>
+</html>

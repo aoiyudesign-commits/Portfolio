@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Canvas — AI Product Analyst</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap" rel="stylesheet">
+  <style>
+    /* ── Notion Design Tokens ── */
+    :root {
+      --primary:        #0075de;
+      --primary-active: #005bab;
+      --canvas:         #ffffff;
+      --canvas-soft:    #f6f5f4;
+      --surface:        #ffffff;
+      --ink:            #000000;
+      --ink-secondary:  #31302e;
+      --ink-muted:      #615d59;
+      --ink-faint:      #a39e98;
+      --hairline:       #e6e6e6;
+      --accent-teal:    #2a9d99;
+      --accent-orange:  #dd5b00;
+      --accent-orange-b:#FF6000;
+      --accent-purple:  #d6b6f6;
+      --accent-green:   #1aae39;
+      --r-xs: 4px; --r-sm: 5px; --r-md: 8px;
+      --r-lg: 12px; --r-xl: 16px; --r-full: 9999px;
+      --shadow-1: 0 0.5px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06);
+      --shadow-2: 0 2px 8px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--canvas-soft);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      height: 48px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      flex-shrink: 0;
+      z-index: 50;
+    }
+
+    .nav-left  { display: flex; align-items: center; gap: 16px; }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+
+    .nav-back {
+      font-size: 13px; font-weight: 500; color: var(--ink-muted);
+      text-decoration: none; display: flex; align-items: center; gap: 4px;
+    }
+    .nav-back:hover { color: var(--ink); }
+
+    .nav-divider { width: 1px; height: 16px; background: var(--hairline); }
+
+    .nav-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 600; color: var(--ink);
+    }
+    .nav-title .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--accent-orange-b);
+    }
+
+    .nav-badge {
+      font-size: 11px; font-weight: 600; color: var(--ink-faint);
+      background: var(--canvas-soft); border: 1px solid var(--hairline);
+      padding: 2px 8px; border-radius: var(--r-full);
+    }
+
+    .btn-nav {
+      font-size: 13px; font-weight: 500; color: var(--ink-secondary);
+      text-decoration: none; padding: 5px 12px;
+      border-radius: var(--r-full); border: 1px solid var(--hairline);
+      background: var(--surface); transition: border-color 0.15s;
+    }
+    .btn-nav:hover { border-color: #c0bdb8; }
+
+    .btn-primary-nav {
+      font-size: 13px; font-weight: 600; color: white;
+      background: var(--primary); padding: 5px 14px;
+      border-radius: var(--r-full); border: none; cursor: not-allowed;
+      opacity: 0.45; font-family: inherit;
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: var(--r-full);
+      padding: 4px 6px;
+      box-shadow: var(--shadow-2);
+    }
+
+    .toolbar-btn {
+      width: 32px; height: 32px; border-radius: var(--r-full);
+      border: none; background: transparent; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: var(--ink-muted);
+      transition: background 0.1s, color 0.1s;
+      font-family: inherit;
+    }
+    .toolbar-btn:hover { background: var(--canvas-soft); color: var(--ink); }
+
+    .toolbar-zoom {
+      font-size: 12px; font-weight: 600; color: var(--ink-secondary);
+      padding: 0 10px; min-width: 48px; text-align: center;
+    }
+
+    .toolbar-divider {
+      width: 1px; height: 20px; background: var(--hairline); margin: 0 4px;
+    }
+
+    /* ── LAYOUT ── */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── CANVAS ── */
+    .canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      background-color: var(--canvas-soft);
+      background-image:
+        radial-gradient(circle, #ccc9c4 1.2px, transparent 1.2px);
+      background-size: 24px 24px;
+    }
+
+    .canvas-wrap.grabbing { cursor: grabbing; }
+
+    .canvas-inner {
+      position: absolute;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+
+    /* ── SVG ── */
+    .conn-svg {
+      position: absolute;
+      top: 0; left: 0;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .conn-path {
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    .conn-path.type-data   { stroke: var(--accent-teal); opacity: 0.7; }
+    .conn-path.type-auto   { stroke: var(--accent-orange-b); opacity: 0.75; }
+    .conn-path.type-human  { stroke: var(--primary); opacity: 0.8; }
+
+    .conn-path.animated {
+      stroke-dasharray: 7 4;
+      animation: flow 1.2s linear infinite;
+    }
+
+    @keyframes flow {
+      to { stroke-dashoffset: -11; }
+    }
+
+    /* ── NODES ── */
+    .node {
+      position: absolute;
+      width: 210px;
+      background: var(--surface);
+      border: 1.5px solid var(--hairline);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-1);
+      cursor: pointer;
+      transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
+      user-select: none;
+    }
+
+    .node:hover {
+      box-shadow: var(--shadow-2);
+      border-color: #c8c5c0;
+      transform: translateY(-1px);
+    }
+
+    .node.selected {
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 0 3px rgba(0,117,222,0.12), var(--shadow-2) !important;
+      transform: translateY(-1px);
+    }
+
+    .node-accent {
+      height: 4px;
+      border-radius: var(--r-lg) var(--r-lg) 0 0;
+    }
+
+    .node-header {
+      padding: 10px 12px 6px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .node-icon-wrap {
+      width: 28px; height: 28px;
+      border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .node-meta { flex: 1; min-width: 0; }
+
+    .node-type-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      margin-bottom: 1px;
+    }
+
+    .node-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: -0.2px;
+    }
+
+    .node-body {
+      padding: 0 12px 10px;
+      font-size: 11px;
+      color: var(--ink-muted);
+      line-height: 1.55;
+    }
+
+    .node-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      margin: 4px 12px 8px;
+      padding: 2px 7px;
+      border-radius: var(--r-full);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* Port dots */
+    .port {
+      position: absolute;
+      width: 10px; height: 10px;
+      background: var(--surface);
+      border: 2px solid var(--ink-faint);
+      border-radius: 50%;
+      top: 50%;
+      transform: translateY(-50%);
+      transition: border-color 0.15s, transform 0.15s;
+      z-index: 2;
+    }
+    .port-out { right: -6px; }
+    .port-in  { left:  -6px; }
+    .node:hover .port, .node.selected .port { transform: translateY(-50%) scale(1.2); }
+    .node.selected .port { border-color: var(--primary); }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 288px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-left: 1px solid var(--hairline);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 16px 18px 14px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .sidebar-eyebrow {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--ink-faint);
+      margin-bottom: 4px;
+    }
+
+    .sidebar-title {
+      font-size: 15px; font-weight: 700; color: var(--ink);
+      letter-spacing: -0.3px;
+    }
+
+    .sidebar-sub {
+      font-size: 12px; color: var(--ink-muted); margin-top: 2px;
+    }
+
+    .sidebar-body { flex: 1; overflow-y: auto; padding: 16px 18px; }
+
+    .sidebar-section { margin-bottom: 20px; }
+
+    .sidebar-section-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--ink-faint);
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .stat-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--canvas-soft);
+      font-size: 12px;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { color: var(--ink-muted); }
+    .stat-value { font-weight: 600; color: var(--ink); }
+
+    .priority-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 0;
+      font-size: 12px;
+      border-bottom: 1px solid var(--canvas-soft);
+    }
+    .priority-row:last-child { border-bottom: none; }
+
+    .pri-num {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--accent-orange-b); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 800; flex-shrink: 0;
+    }
+    .pri-num.dim { background: var(--ink-faint); }
+
+    .pri-text { color: var(--ink-secondary); font-weight: 500; flex: 1; }
+
+    .node-detail-type {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: var(--r-full);
+      font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; margin-bottom: 10px;
+    }
+
+    .node-detail-desc {
+      font-size: 13px; color: var(--ink-secondary);
+      line-height: 1.6; margin-bottom: 14px;
+    }
+
+    .conn-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--canvas-soft); border: 1px solid var(--hairline);
+      padding: 3px 8px; border-radius: var(--r-full);
+      font-size: 11px; color: var(--ink-muted);
+      margin: 2px;
+    }
+
+    .conn-pills { display: flex; flex-wrap: wrap; gap: 2px; }
+
+    /* Run button in sidebar */
+    .btn-run {
+      width: 100%;
+      padding: 10px;
+      background: var(--canvas-soft);
+      border: 1.5px dashed var(--hairline);
+      border-radius: var(--r-md);
+      font-size: 12px; font-weight: 600; color: var(--ink-faint);
+      font-family: inherit;
+      cursor: not-allowed;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+
+    /* Status bar */
+    .status-bar {
+      height: 28px;
+      background: var(--canvas-soft);
+      border-top: 1px solid var(--hairline);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .status-item {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--ink-faint); font-weight: 500;
+    }
+
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-left">
+    <a href="../index.html" class="nav-back">← 홈</a>
+    <div class="nav-divider"></div>
+    <div class="nav-title">
+      <div class="dot"></div>
+      AI Product Analyst Agent
+    </div>
+    <span class="nav-badge">29CM</span>
+  </div>
+  <div class="nav-right">
+    <a href="dashboard.html" class="btn-nav">대시보드</a>
+    <a href="report.html" class="btn-nav">리포트</a>
+    <button class="btn-primary-nav">
+      ▶ 실행
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main-layout">
+
+  <!-- CANVAS -->
+  <div class="canvas-wrap" id="canvasWrap">
+    <div class="canvas-inner" id="canvasInner">
+      <svg class="conn-svg" id="connSvg" width="2400" height="800"></svg>
+      <!-- Nodes rendered by JS -->
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <button class="toolbar-btn" id="btnZoomOut" title="축소">−</button>
+      <span class="toolbar-zoom" id="zoomLabel">100%</span>
+      <button class="toolbar-btn" id="btnZoomIn" title="확대">+</button>
+      <div class="toolbar-divider"></div>
+      <button class="toolbar-btn" id="btnFit" title="전체 보기">⊡</button>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-eyebrow">에이전트 구성</div>
+      <div class="sidebar-title" id="sidebarTitle">AI Product Analyst Agent</div>
+      <div class="sidebar-sub" id="sidebarSub">노드를 클릭해 세부 정보 확인</div>
+    </div>
+    <div class="sidebar-body" id="sidebarBody">
+
+      <!-- Default state -->
+      <div id="defaultPanel">
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">에이전트 개요</div>
+          <div class="stat-row"><span class="stat-label">분석 대상</span><span class="stat-value">29CM</span></div>
+          <div class="stat-row"><span class="stat-label">데이터 소스</span><span class="stat-value">4종</span></div>
+          <div class="stat-row"><span class="stat-label">처리 단계</span><span class="stat-value">7단계</span></div>
+          <div class="stat-row"><span class="stat-label">인간 검토</span><span class="stat-value">2회</span></div>
+          <div class="stat-row"><span class="stat-label">자동 실행</span><span class="stat-value">5단계</span></div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">판단 기준 순위</div>
+          <div class="priority-row"><div class="pri-num">1</div><span class="pri-text">영향 사용자 수</span></div>
+          <div class="priority-row"><div class="pri-num">2</div><span class="pri-text">핵심 퍼널 영향도</span></div>
+          <div class="priority-row"><div class="pri-num dim">3</div><span class="pri-text">이탈률</span></div>
+          <div class="priority-row"><div class="pri-num dim">4</div><span class="pri-text">VOC 빈도</span></div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">데모 데이터 보정 기준</div>
+          <div style="font-size:12px;color:var(--ink-muted);line-height:1.65;">
+            정량 신호(GA4·Amplitude)는 반드시 29CM 리뷰·VOC 교차 검증 후에만 우선순위를 확정합니다.
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">실행</div>
+          <button class="btn-run">
+            🔑 Claude API 키 연동 시 활성화
+          </button>
+        </div>
+      </div>
+
+      <!-- Node detail panel (hidden by default) -->
+      <div id="nodePanel" style="display:none;"></div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <div class="status-item">
+    <div class="status-dot" style="background:#c8c5c0;"></div>
+    대기 중
+  </div>
+  <div class="status-item">노드 11개</div>
+  <div class="status-item">연결 11개</div>
+  <div class="status-item" id="statusPos">오프셋 (0, 0)</div>
+</div>
+
+<script>
+/* ── 노드 데이터 ── */
+const NODE_W = 210;
+
+const nodes = [
+  {
+    id:'ga4', x:80, y:80,
+    accentColor:'#2a9d99', iconBg:'rgba(42,157,153,0.12)', icon:'📊',
+    typeLabel:'데이터 소스', typeLabelColor:'#2a9d99',
+    title:'GA4 Demo Dataset',
+    desc:'ga4_obfuscated_sample_ecommerce',
+    badge:null, badgeColor:null,
+    detail:'Google Analytics Demo Account의 이커머스 데모 데이터셋. 퍼널 전환율, 세션 수, 이탈률, 이벤트 데이터를 제공합니다.',
+    config:{'데이터셋':'ga4_obfuscated_sample_ecommerce','접근 방법':'GA4 Demo Account','갱신 주기':'실시간(데모)'},
+    inputs:[], outputs:['퍼널 전환율 분석'],
+    connType:'data',
+  },
+  {
+    id:'amplitude', x:80, y:220,
+    accentColor:'#2a9d99', iconBg:'rgba(42,157,153,0.12)', icon:'📈',
+    typeLabel:'데이터 소스', typeLabelColor:'#2a9d99',
+    title:'Amplitude Demo Data',
+    desc:'사용자 행동 흐름 분석',
+    badge:null, badgeColor:null,
+    detail:'Amplitude 데모 데이터. 사용자 이벤트 시퀀스, 이탈 행동 흐름, 세션 분석 등 행동 데이터를 제공합니다.',
+    config:{'플랫폼':'Amplitude','데이터 유형':'Event Stream','갱신 주기':'실시간(데모)'},
+    inputs:[], outputs:['퍼널 전환율 분석','이탈 행동 흐름 분석'],
+    connType:'data',
+  },
+  {
+    id:'reviews', x:80, y:360,
+    accentColor:'#615d59', iconBg:'rgba(97,93,89,0.1)', icon:'⭐',
+    typeLabel:'정성 데이터', typeLabelColor:'#615d59',
+    title:'29CM 앱 리뷰',
+    desc:'Google Play · App Store',
+    badge:null, badgeColor:null,
+    detail:'Google Play 스토어와 App Store에서 수집한 실제 29CM 사용자 리뷰. 서비스 불편 사항과 개선 요청을 분류합니다.',
+    config:{'출처':'Google Play, App Store','수집 방법':'크롤링·수동 수집','수집 건수':'~95건'},
+    inputs:[], outputs:['VOC 교차 검증'],
+    connType:'data',
+  },
+  {
+    id:'voc', x:80, y:500,
+    accentColor:'#615d59', iconBg:'rgba(97,93,89,0.1)', icon:'💬',
+    typeLabel:'정성 데이터', typeLabelColor:'#615d59',
+    title:'커뮤니티 VOC',
+    desc:'29CM 관련 커뮤니티 후기',
+    badge:null, badgeColor:null,
+    detail:'29CM 관련 커뮤니티(네이버 카페, 인스타그램 댓글 등)에서 수집한 사용자 후기 및 VOC. 반복 불편 패턴을 파악합니다.',
+    config:{'출처':'커뮤니티·SNS','수집 방법':'크롤링·수동 수집','수집 건수':'~71건'},
+    inputs:[], outputs:['VOC 교차 검증'],
+    connType:'data',
+  },
+  {
+    id:'funnel', x:380, y:130,
+    accentColor:'#FF6000', iconBg:'rgba(255,96,0,0.10)', icon:'⚙️',
+    typeLabel:'자동 실행', typeLabelColor:'#FF6000',
+    title:'퍼널 전환율 분석',
+    desc:'이탈 구간 탐지 · 보고서 생성',
+    badge:'STEP 1', badgeColor:'rgba(255,96,0,0.12)',
+    detail:'GA4 Demo Dataset의 이커머스 퍼널 데이터를 분석하여 전환율 저하 구간을 탐지하고 보고서를 자동 생성합니다.',
+    config:{'입력 데이터':'GA4 + Amplitude','분석 항목':'퍼널 전환율, 이탈 구간','출력':'이탈 구간 보고서'},
+    inputs:['GA4 Demo Dataset','Amplitude Demo Data'], outputs:['VOC 교차 검증'],
+    connType:'auto',
+  },
+  {
+    id:'behavior', x:380, y:320,
+    accentColor:'#FF6000', iconBg:'rgba(255,96,0,0.10)', icon:'⚙️',
+    typeLabel:'자동 실행', typeLabelColor:'#FF6000',
+    title:'이탈 행동 흐름 분석',
+    desc:'Amplitude 이탈 패턴 분석',
+    badge:'STEP 2', badgeColor:'rgba(255,96,0,0.12)',
+    detail:'Amplitude 데모 데이터에서 이탈이 발생하는 행동 흐름 패턴을 분석하고 주요 이탈 지점을 식별합니다.',
+    config:{'입력 데이터':'Amplitude','분석 항목':'이탈 행동 시퀀스','출력':'이탈 행동 보고서'},
+    inputs:['Amplitude Demo Data'], outputs:['VOC 교차 검증'],
+    connType:'auto',
+  },
+  {
+    id:'voc_cross', x:680, y:240,
+    accentColor:'#FF6000', iconBg:'rgba(255,96,0,0.10)', icon:'🔄',
+    typeLabel:'자동 실행', typeLabelColor:'#FF6000',
+    title:'VOC 교차 검증',
+    desc:'정량·정성 데이터 동일 문제 확인',
+    badge:'STEP 3', badgeColor:'rgba(255,96,0,0.12)',
+    detail:'GA4·Amplitude 정량 분석 결과와 29CM 리뷰·VOC 정성 데이터를 교차 검증하여 동일 문제를 확인합니다. 정성 검증 없이 정량 신호만으로 우선순위를 확정하지 않습니다.',
+    config:{'규칙':'정성 검증 필수','임계값':'추후 정의 필요','출력':'검증된 문제 목록'},
+    inputs:['29CM 앱 리뷰','커뮤니티 VOC','퍼널 전환율 분석','이탈 행동 흐름 분석'], outputs:['우선순위 보고서 생성'],
+    connType:'auto',
+  },
+  {
+    id:'report', x:980, y:240,
+    accentColor:'#FF6000', iconBg:'rgba(255,96,0,0.10)', icon:'📋',
+    typeLabel:'자동 실행', typeLabelColor:'#FF6000',
+    title:'우선순위 보고서 생성',
+    desc:'개선 우선순위 + 판단 근거 대시보드',
+    badge:'STEP 4', badgeColor:'rgba(255,96,0,0.12)',
+    detail:'판단 기준 순위(영향 사용자 수 → 핵심 퍼널 → 이탈률 → VOC 빈도)를 적용하여 개선 우선순위를 선정하고, 판단 근거 대시보드를 자동 생성합니다.',
+    config:{'판단 기준':'1순위: 영향 사용자 수','출력 1':'우선순위 보고서','출력 2':'판단 근거 대시보드'},
+    inputs:['VOC 교차 검증'], outputs:['개선 가설 확정'],
+    connType:'auto',
+  },
+  {
+    id:'human1', x:1280, y:240,
+    accentColor:'#0075de', iconBg:'rgba(0,117,222,0.10)', icon:'👤',
+    typeLabel:'인간 검토', typeLabelColor:'#0075de',
+    title:'개선 가설 확정',
+    desc:'대시보드 검토 후 개선 가설 확정',
+    badge:'HUMAN', badgeColor:'rgba(0,117,222,0.10)',
+    detail:'AI가 생성한 판단 근거 대시보드를 사람이 검토하고, 데모 데이터와 실제 서비스 맥락의 차이를 보정하여 개선 가설을 확정합니다.',
+    config:{'역할':'검토 및 방향 결정','보정 항목':'데모-실서비스 맥락 차이','출력':'확정된 개선 가설'},
+    inputs:['우선순위 보고서 생성'], outputs:['A/B 테스트 초안 생성'],
+    connType:'human',
+  },
+  {
+    id:'ab_draft', x:1580, y:240,
+    accentColor:'#FF6000', iconBg:'rgba(255,96,0,0.10)', icon:'🧪',
+    typeLabel:'자동 실행', typeLabelColor:'#FF6000',
+    title:'A/B 테스트 초안 생성',
+    desc:'확정 가설 기반 A/B 계획 생성',
+    badge:'STEP 6', badgeColor:'rgba(255,96,0,0.12)',
+    detail:'확정된 개선 가설을 바탕으로 A/B 테스트 계획과 기능 요구사항 초안을 자동 생성합니다. 가설 템플릿: "우리가 [대상]의 [문제]를 [방식]으로 개선하면 [지표]가 향상될 것이다."',
+    config:{'입력':'확정된 개선 가설','출력 1':'A/B 테스트 계획','출력 2':'기능 요구사항 초안'},
+    inputs:['개선 가설 확정'], outputs:['최종 검토·승인'],
+    connType:'auto',
+  },
+  {
+    id:'human2', x:1880, y:240,
+    accentColor:'#0075de', iconBg:'rgba(0,117,222,0.10)', icon:'✅',
+    typeLabel:'인간 검토', typeLabelColor:'#0075de',
+    title:'최종 검토 · 승인',
+    desc:'A/B 계획·기능 요구사항 최종 승인',
+    badge:'HUMAN', badgeColor:'rgba(0,117,222,0.10)',
+    detail:'AI가 생성한 A/B 테스트 계획과 기능 요구사항 초안을 최종 검토·승인합니다. 실제 테스트 실행 전 인간의 최종 의사결정 단계입니다.',
+    config:{'역할':'최종 승인','검토 항목':'A/B 계획, 기능 요구사항','출력':'승인된 실행 계획'},
+    inputs:['A/B 테스트 초안 생성'], outputs:[],
+    connType:'human',
+  },
+];
+
+/* 연결 정의 */
+const connections = [
+  { from:'ga4',       to:'funnel',    type:'data'  },
+  { from:'amplitude', to:'funnel',    type:'data'  },
+  { from:'amplitude', to:'behavior',  type:'data'  },
+  { from:'reviews',   to:'voc_cross', type:'data'  },
+  { from:'voc',       to:'voc_cross', type:'data'  },
+  { from:'funnel',    to:'voc_cross', type:'auto'  },
+  { from:'behavior',  to:'voc_cross', type:'auto'  },
+  { from:'voc_cross', to:'report',    type:'auto'  },
+  { from:'report',    to:'human1',    type:'human' },
+  { from:'human1',    to:'ab_draft',  type:'human' },
+  { from:'ab_draft',  to:'human2',    type:'human' },
+];
+
+/* ── 노드 렌더링 ── */
+const canvasInner = document.getElementById('canvasInner');
+const connSvg     = document.getElementById('connSvg');
+const nodeMap     = {};
+
+nodes.forEach(n => {
+  const el = document.createElement('div');
+  el.className = 'node';
+  el.id = 'node-' + n.id;
+  el.style.left = n.x + 'px';
+  el.style.top  = n.y + 'px';
+
+  let badgeHTML = '';
+  if (n.badge) {
+    badgeHTML = `<div class="node-badge" style="background:${n.badgeColor};color:${n.accentColor};">${n.badge}</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="node-accent" style="background:${n.accentColor};"></div>
+    <div class="node-header">
+      <div class="node-icon-wrap" style="background:${n.iconBg};">${n.icon}</div>
+      <div class="node-meta">
+        <div class="node-type-label" style="color:${n.typeLabelColor};">${n.typeLabel}</div>
+        <div class="node-title">${n.title}</div>
+      </div>
+    </div>
+    <div class="node-body">${n.desc}</div>
+    ${badgeHTML}
+    ${n.inputs.length  > 0 ? '<div class="port port-in"></div>'  : ''}
+    ${n.outputs.length > 0 ? '<div class="port port-out"></div>' : ''}
+  `;
+
+  el.addEventListener('click', () => selectNode(n));
+  canvasInner.appendChild(el);
+  nodeMap[n.id] = { data: n, el };
+});
+
+/* ── SVG 연결 그리기 ── */
+function getPortPos(nodeId, side) {
+  const { data, el } = nodeMap[nodeId];
+  const h = el.offsetHeight;
+  if (side === 'out') return { x: data.x + NODE_W,  y: data.y + h / 2 };
+  else                 return { x: data.x,           y: data.y + h / 2 };
+}
+
+function drawConnections() {
+  connSvg.innerHTML = '';
+
+  connections.forEach(c => {
+    const fromEl = nodeMap[c.from]?.el;
+    const toEl   = nodeMap[c.to]?.el;
+    if (!fromEl || !toEl) return;
+
+    const out  = getPortPos(c.from, 'out');
+    const inp  = getPortPos(c.to,   'in');
+    const dx   = Math.max(60, Math.abs(inp.x - out.x) * 0.45);
+    const cp1x = out.x + dx;
+    const cp2x = inp.x - dx;
+    const d    = `M${out.x},${out.y} C${cp1x},${out.y} ${cp2x},${inp.y} ${inp.x},${inp.y}`;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', d);
+    path.setAttribute('class', `conn-path type-${c.type} animated`);
+    connSvg.appendChild(path);
+
+    /* Arrow marker */
+    const arrowSize = 5;
+    const angle = Math.atan2(inp.y - (inp.y), inp.x - cp2x) * 180 / Math.PI;
+    const marker = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    const tipX = inp.x - 1;
+    const tipY = inp.y;
+    const colorMap = { data:'#2a9d99', auto:'#FF6000', human:'#0075de' };
+    marker.setAttribute('points',
+      `${tipX},${tipY} ${tipX - arrowSize * 1.5},${tipY - arrowSize * 0.7} ${tipX - arrowSize * 1.5},${tipY + arrowSize * 0.7}`
+    );
+    marker.setAttribute('fill', colorMap[c.type]);
+    marker.setAttribute('opacity', '0.8');
+    connSvg.appendChild(marker);
+  });
+}
+
+/* ── 노드 선택 ── */
+let selectedId = null;
+
+function selectNode(n) {
+  /* 이전 선택 해제 */
+  if (selectedId) {
+    const prev = document.getElementById('node-' + selectedId);
+    if (prev) prev.classList.remove('selected');
+  }
+
+  selectedId = n.id;
+  document.getElementById('node-' + n.id).classList.add('selected');
+
+  /* 사이드바 업데이트 */
+  document.getElementById('defaultPanel').style.display = 'none';
+  document.getElementById('nodePanel').style.display = 'block';
+  document.getElementById('sidebarTitle').textContent = n.title;
+  document.getElementById('sidebarSub').textContent = n.typeLabel;
+
+  const configRows = Object.entries(n.config).map(([k,v]) =>
+    `<div class="stat-row"><span class="stat-label">${k}</span><span class="stat-value" style="font-size:11px;">${v}</span></div>`
+  ).join('');
+
+  const inputPills = n.inputs.length
+    ? n.inputs.map(i => `<span class="conn-pill">← ${i}</span>`).join('')
+    : '<span style="font-size:11px;color:var(--ink-faint);">없음 (최상위 소스)</span>';
+
+  const outputPills = n.outputs.length
+    ? n.outputs.map(o => `<span class="conn-pill">${o} →</span>`).join('')
+    : '<span style="font-size:11px;color:var(--ink-faint);">없음 (최종 단계)</span>';
+
+  const badgeStyle = n.connType === 'human'
+    ? `background:rgba(0,117,222,0.1);color:#0075de;`
+    : n.connType === 'data'
+    ? `background:rgba(42,157,153,0.1);color:#2a9d99;`
+    : `background:rgba(255,96,0,0.1);color:#FF6000;`;
+
+  document.getElementById('nodePanel').innerHTML = `
+    <div class="sidebar-section">
+      <div class="node-detail-type" style="${badgeStyle}">${n.icon} ${n.typeLabel}</div>
+      <div class="node-detail-desc">${n.detail}</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">설정</div>
+      ${configRows}
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">입력 연결</div>
+      <div class="conn-pills">${inputPills}</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">출력 연결</div>
+      <div class="conn-pills">${outputPills}</div>
+    </div>
+    <div class="sidebar-section">
+      <button class="btn-run" style="cursor:pointer;border-style:solid;color:var(--ink-secondary);font-size:12px;"
+        onclick="document.getElementById('node-${n.id}').classList.remove('selected'); document.getElementById('defaultPanel').style.display='block'; document.getElementById('nodePanel').style.display='none'; document.getElementById('sidebarTitle').textContent='AI Product Analyst Agent'; document.getElementById('sidebarSub').textContent='노드를 클릭해 세부 정보 확인'; selectedId=null;">
+        ← 전체 에이전트 보기
+      </button>
+    </div>
+  `;
+}
+
+/* ── 캔버스 팬 ── */
+let panX = 40, panY = 40, scale = 1;
+let isPanning = false;
+let startX, startY;
+
+const wrap = document.getElementById('canvasWrap');
+const inner = document.getElementById('canvasInner');
+
+function applyTransform() {
+  inner.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+  document.getElementById('zoomLabel').textContent = Math.round(scale * 100) + '%';
+  document.getElementById('statusPos').textContent = `오프셋 (${Math.round(-panX)}, ${Math.round(-panY)})`;
+}
+
+wrap.addEventListener('mousedown', e => {
+  if (e.target.classList.contains('node') || e.target.closest('.node') || e.target.closest('.toolbar')) return;
+  isPanning = true;
+  startX = e.clientX - panX;
+  startY = e.clientY - panY;
+  wrap.classList.add('grabbing');
+});
+
+window.addEventListener('mousemove', e => {
+  if (!isPanning) return;
+  panX = e.clientX - startX;
+  panY = e.clientY - startY;
+  applyTransform();
+});
+
+window.addEventListener('mouseup', () => {
+  isPanning = false;
+  wrap.classList.remove('grabbing');
+});
+
+/* ── 줌 ── */
+wrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.08 : 0.08;
+  const newScale = Math.min(2, Math.max(0.3, scale + delta));
+
+  /* 마우스 위치 기준 줌 */
+  const rect = wrap.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  panX = mx - (mx - panX) * (newScale / scale);
+  panY = my - (my - panY) * (newScale / scale);
+  scale = newScale;
+  applyTransform();
+}, { passive: false });
+
+document.getElementById('btnZoomIn').addEventListener('click', () => {
+  scale = Math.min(2, scale + 0.1);
+  applyTransform();
+});
+
+document.getElementById('btnZoomOut').addEventListener('click', () => {
+  scale = Math.max(0.3, scale - 0.1);
+  applyTransform();
+});
+
+document.getElementById('btnFit').addEventListener('click', () => {
+  const wrapW = wrap.clientWidth;
+  const wrapH = wrap.clientHeight;
+  const contentW = 2200;
+  const contentH = 680;
+  const newScale = Math.min(wrapW / contentW, wrapH / contentH) * 0.92;
+  scale = newScale;
+  panX = (wrapW - contentW * scale) / 2;
+  panY = (wrapH - contentH * scale) / 2;
+  applyTransform();
+});
+
+/* ── 초기화 ── */
+applyTransform();
+
+/* 노드 렌더 완료 후 연결 그리기 */
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    drawConnections();
+  });
+});
+</script>
+</body>
+</html>

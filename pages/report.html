@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AX 에이전트 설계 코치 v10 · 2026년 06월 19일 자동 작성">
+  <title>AI 학습 과제 설계 결과 리포트 — 김유빈</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      line-height: 1.75;
+      color: #2C2C2C;
+      background: #FAFAF9;
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 52px 44px;
+    }
+
+    header {
+      margin-bottom: 40px;
+      padding-bottom: 32px;
+      border-bottom: 2.5px solid #FF6000;
+    }
+
+    .brand-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #FF6000;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #2C2C2C;
+      margin-bottom: 4px;
+    }
+
+    .meta {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 24px;
+    }
+
+    .participant-box {
+      background: #FFFFFF;
+      border: 1px solid #E5E5E3;
+      border-radius: 10px;
+      padding: 18px 24px;
+      display: flex;
+      gap: 36px;
+      flex-wrap: wrap;
+    }
+
+    .participant-item { display: flex; flex-direction: column; }
+    .participant-label { font-size: 11px; color: #999; font-weight: 500; margin-bottom: 2px; }
+    .participant-value { font-size: 14px; font-weight: 700; color: #2C2C2C; }
+
+    h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #2C2C2C;
+      margin: 40px 0 14px;
+    }
+
+    .ax-box {
+      background: #FFFFFF;
+      border: 1px solid #E5E5E3;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .ax-section {
+      padding: 22px 26px;
+      border-bottom: 1px solid #E5E5E3;
+    }
+
+    .ax-section:last-child { border-bottom: none; }
+
+    .ax-section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .ax-number {
+      width: 26px;
+      height: 26px;
+      background: #FF6000;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .ax-section-title { font-size: 14px; font-weight: 700; color: #2C2C2C; }
+    .ax-section-subtitle { font-size: 11px; color: #999; margin-left: 4px; }
+
+    .info-row {
+      display: flex;
+      margin-bottom: 8px;
+      font-size: 13px;
+      gap: 8px;
+    }
+
+    .info-row:last-child { margin-bottom: 0; }
+    .info-label { color: #888; font-weight: 500; min-width: 130px; flex-shrink: 0; }
+    .info-value { color: #2C2C2C; }
+
+    .sub-section { margin-bottom: 18px; }
+    .sub-section:last-child { margin-bottom: 0; }
+
+    .sub-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #E5E5E3;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+    th {
+      background: rgba(255, 96, 0, 0.07);
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      color: #666;
+      border-bottom: 1px solid #E5E5E3;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #F2F2F0;
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .tag-q  { background: #EEF6FF; color: #2E7EC0; }
+    .tag-ql { background: #EEFAF3; color: #2D8A4E; }
+
+    .chip {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .chip-auto   { background: rgba(255,96,0,0.10); color: #FF6000; }
+    .chip-human  { background: #EEF2FF; color: #4F6FE5; }
+
+    .p-badge {
+      display: inline-flex;
+      width: 20px;
+      height: 20px;
+      background: #FF6000;
+      color: white;
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      margin-right: 4px;
+    }
+
+    .p-badge.dim { background: #C0C0C0; }
+
+    .note-box {
+      background: rgba(255,96,0,0.04);
+      border: 1px solid rgba(255,96,0,0.18);
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-size: 12px;
+      color: #555;
+      margin-top: 12px;
+    }
+
+    .note-box strong { color: #FF6000; }
+
+    .example-box {
+      background: #F7F7F5;
+      border-radius: 6px;
+      padding: 11px 14px;
+      font-size: 12px;
+      color: #555;
+      margin-top: 10px;
+      line-height: 1.8;
+    }
+
+    .example-box .ex-label {
+      font-weight: 700;
+      color: #2C2C2C;
+      margin-bottom: 5px;
+    }
+
+    .action-step {
+      display: flex;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid #F2F2F0;
+      gap: 12px;
+    }
+
+    .action-step:last-child { border-bottom: none; }
+
+    .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .step-num.auto  { background: rgba(255,96,0,0.12); color: #FF6000; }
+    .step-num.human { background: #EEF2FF; color: #4F6FE5; }
+
+    .action-text { font-size: 13px; color: #2C2C2C; flex: 1; }
+    .action-verb { font-weight: 700; color: #FF6000; }
+
+    .one-sentence {
+      background: rgba(255,96,0,0.06);
+      border-left: 4px solid #FF6000;
+      border-radius: 0 8px 8px 0;
+      padding: 18px 22px;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.85;
+      color: #2C2C2C;
+    }
+
+    .assessment-box {
+      background: #FFFFFF;
+      border: 1px solid #E5E5E3;
+      border-radius: 12px;
+      padding: 22px 26px;
+    }
+
+    .check-list, .arrow-list { list-style: none; padding: 0; }
+
+    .check-list li, .arrow-list li {
+      padding: 7px 0 7px 18px;
+      position: relative;
+      font-size: 13px;
+      border-bottom: 1px solid #F2F2F0;
+    }
+
+    .check-list li:last-child, .arrow-list li:last-child { border-bottom: none; }
+
+    .check-list li::before { content: '✓'; position: absolute; left: 0; color: #2D8A4E; font-weight: 700; }
+    .arrow-list li::before { content: '→'; position: absolute; left: 0; color: #FF6000; font-weight: 700; }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 22px;
+      border-top: 1px solid #E5E5E3;
+      text-align: center;
+      font-size: 11px;
+      color: #BBB;
+      line-height: 1.8;
+    }
+
+    @media print {
+      body { background: white; }
+      .container { padding: 24px 28px; }
+      section { page-break-inside: avoid; }
+      .ax-section { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<nav style="position:sticky;top:0;z-index:100;background:rgba(250,250,249,0.92);backdrop-filter:blur(12px);border-bottom:1px solid #E5E5E3;padding:0 40px;height:52px;display:flex;align-items:center;justify-content:space-between;">
+  <a href="../index.html" style="font-size:13px;font-weight:700;color:#FF6000;text-decoration:none;letter-spacing:0.04em;">← 홈으로</a>
+  <span style="font-size:12px;color:#999;">AI 학습 과제 설계 결과 리포트</span>
+  <a href="../assets/AI_과제설계_리포트_김유빈.pdf" download style="font-size:12px;font-weight:600;color:#FF6000;text-decoration:none;background:rgba(255,96,0,0.08);padding:5px 14px;border-radius:8px;">PDF 다운로드</a>
+</nav>
+
+<div class="container">
+
+  <header>
+    <div class="brand-label">AX 에이전트 설계 코치 v10 · 2026년 06월 19일 자동 작성</div>
+    <h1>AI 학습 과제 설계 결과 리포트</h1>
+    <div class="meta">1주차 AI 학습 과제 설계 코치 세션 공식 산출물</div>
+    <div class="participant-box">
+      <div class="participant-item">
+        <span class="participant-label">이름</span>
+        <span class="participant-value">김유빈</span>
+      </div>
+      <div class="participant-item">
+        <span class="participant-label">직무</span>
+        <span class="participant-value">서비스 기획자</span>
+      </div>
+      <div class="participant-item">
+        <span class="participant-label">업종</span>
+        <span class="participant-value">IT</span>
+      </div>
+      <div class="participant-item">
+        <span class="participant-label">분석 대상 서비스</span>
+        <span class="participant-value">29CM</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <h2>AX 과제 설계</h2>
+    <div class="ax-box">
+
+      <div class="ax-section">
+        <div class="ax-section-header">
+          <div class="ax-number">1</div>
+          <div>
+            <span class="ax-section-title">의사결정</span>
+            <span class="ax-section-subtitle">Decision</span>
+          </div>
+        </div>
+        <div class="info-row">
+          <span class="info-label">의사결정 한 문장</span>
+          <span class="info-value">사용자 행동 데이터와 VOC를 분석하여 29CM의 어떤 화면·기능을 우선 개선할지 선별한다</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">결정 맥락</span>
+          <span class="info-value">서비스 개선 과제 발굴·우선순위 결정 시마다, 주 1~2회 행동 데이터와 VOC·리뷰를 검토하여 이탈 구간과 불편 요소 파악 후 결정</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">본인의 판단 관여</span>
+          <span class="info-value">직접 수행 / 본인 판단 기준 보유</span>
+        </div>
+        <div class="info-row" style="margin-bottom:0;">
+          <span class="info-label">우선순위 평가</span>
+          <span class="info-value">
+            빈도·파급도: <strong>높음</strong> (주 1~2회, 서비스 핵심 흐름 직결)<br>
+            중요도(리스크·효익): <strong>높음</strong> (우선순위 오판 시 개발 비용 낭비 및 사용자 경험 저하)
+          </span>
+        </div>
+      </div>
+
+      <div class="ax-section">
+        <div class="ax-section-header">
+          <div class="ax-number">2</div>
+          <div>
+            <span class="ax-section-title">데이터</span>
+            <span class="ax-section-subtitle">Data</span>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="sub-title">참고 데이터</div>
+          <table>
+            <thead>
+              <tr><th>구분</th><th>자료</th><th>위치</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="tag tag-q">정량</span></td>
+                <td>GA4 Demo Dataset<br><small style="color:#999;">ga4_obfuscated_sample_ecommerce</small></td>
+                <td>Google Analytics Demo Account</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-q">정량</span></td>
+                <td>Amplitude Demo Data</td>
+                <td>Amplitude</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-ql">정성</span></td>
+                <td>29CM 앱 리뷰 (Google Play · App Store)</td>
+                <td>앱 마켓</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-ql">정성</span></td>
+                <td>29CM 커뮤니티 후기 · VOC</td>
+                <td>커뮤니티</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="note-box">
+            <strong>데이터 활용 구조 및 보정 기준</strong> — 정량 데이터(GA4·Amplitude)에서 행동 패턴·이탈 구간을 발견하고, 정성 데이터(29CM 리뷰·VOC)로 동일 문제를 교차 검증한 뒤 개선 우선순위를 확정한다. <strong>정성 검증 없이 정량 신호만으로 우선순위를 확정하지 않는다.</strong>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="sub-title">판단 기준 — 우선순위 충돌 처리 규칙</div>
+          <table>
+            <thead>
+              <tr><th>순위</th><th>기준</th><th>적용 원칙</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="p-badge">1</span></td>
+                <td><strong>영향 사용자 수</strong></td>
+                <td>동일 조건이면 더 많은 사용자에게 영향을 주는 문제를 먼저</td>
+              </tr>
+              <tr>
+                <td><span class="p-badge">2</span></td>
+                <td><strong>핵심 사용자 흐름 영향도</strong></td>
+                <td>핵심 퍼널(검색→상품→장바구니→결제)에 직결된 문제 우선</td>
+              </tr>
+              <tr>
+                <td><span class="p-badge dim">3</span></td>
+                <td>이탈률</td>
+                <td>이탈률 높더라도 1·2순위 낮으면 후순위로 평가</td>
+              </tr>
+              <tr>
+                <td><span class="p-badge dim">4</span></td>
+                <td>VOC 빈도</td>
+                <td>단독 신호로는 우선순위 올리지 않음, 정량과 교차 시 가중</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="example-box">
+            <div class="ex-label">적용 예시</div>
+            <div>✅ 이탈률 상대적으로 낮음 + 영향 사용자 수 많음 + 핵심 퍼널 직결 → <strong>우선 개선 대상</strong></div>
+            <div>⬇️ 이탈률 높음 + 영향 사용자 수 적음 + 핵심 퍼널 무관 → <strong>후순위</strong></div>
+          </div>
+        </div>
+
+        <div class="sub-section" style="margin-bottom:0;">
+          <div class="sub-title">가장 중요한 기준의 적용 방식</div>
+          <div class="example-box">
+            <strong>'영향 사용자 수 × 핵심 흐름 영향도'</strong>를 1·2순위 기준으로 적용한다.<br>
+            예) GA4 회원가입 퍼널 전환율 저하 + Amplitude 이탈 흐름 확인 + 29CM 리뷰 "가입 과정 복잡" 반복 → <strong>우선 개선 확정</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="ax-section">
+        <div class="ax-section-header">
+          <div class="ax-number">3</div>
+          <div>
+            <span class="ax-section-title">액션</span>
+            <span class="ax-section-subtitle">Action — 에이전트 워크플로우</span>
+          </div>
+        </div>
+
+        <div class="action-step">
+          <div class="step-num auto">1</div>
+          <div class="action-text">GA4 Demo Dataset에서 퍼널별 전환율 저하 구간을 탐지하고 보고서를 <span class="action-verb">생성한다</span> &nbsp;<span class="chip chip-auto">자동 실행</span></div>
+        </div>
+        <div class="action-step">
+          <div class="step-num auto">2</div>
+          <div class="action-text">Amplitude Demo Data에서 이탈 행동 흐름을 <span class="action-verb">분석한다</span> &nbsp;<span class="chip chip-auto">자동 실행</span></div>
+        </div>
+        <div class="action-step">
+          <div class="step-num auto">3</div>
+          <div class="action-text">29CM 앱 리뷰·커뮤니티 VOC에서 동일 문제를 교차 <span class="action-verb">검증한다</span> &nbsp;<span class="chip chip-auto">자동 실행</span></div>
+        </div>
+        <div class="action-step">
+          <div class="step-num auto">4</div>
+          <div class="action-text">판단 기준 순위를 적용하여 개선 우선순위를 선정하고 판단 근거 대시보드를 <span class="action-verb">생성한다</span> &nbsp;<span class="chip chip-auto">자동 실행</span></div>
+        </div>
+        <div class="action-step">
+          <div class="step-num human">5</div>
+          <div class="action-text">대시보드를 <span class="action-verb">검토하고</span> 개선 가설을 <span class="action-verb">확정한다</span> &nbsp;<span class="chip chip-human">인간 검토</span></div>
+        </div>
+        <div class="action-step">
+          <div class="step-num auto">6</div>
+          <div class="action-text">확정된 가설을 바탕으로 A/B 테스트 계획·기능 요구사항 초안을 <span class="action-verb">생성한다</span> &nbsp;<span class="chip chip-auto">자동 실행</span></div>
+        </div>
+        <div class="action-step">
+          <div class="step-num human">7</div>
+          <div class="action-text">A/B 테스트 계획·기능 요구사항을 <span class="action-verb">검토·승인한다</span> &nbsp;<span class="chip chip-human">인간 검토</span></div>
+        </div>
+      </div>
+
+      <div class="ax-section">
+        <div class="ax-section-header">
+          <div class="ax-number">4</div>
+          <div>
+            <span class="ax-section-title">통제</span>
+            <span class="ax-section-subtitle">Control</span>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>액션</th><th>실행 구분</th><th>검토 근거</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>GA4 전환율 저하 탐지 및 보고서 생성</td>
+              <td><span class="chip chip-auto">자동 실행</span></td>
+              <td>내부 분석, 외부 영향 없음</td>
+            </tr>
+            <tr>
+              <td>Amplitude 이탈 흐름 분석</td>
+              <td><span class="chip chip-auto">자동 실행</span></td>
+              <td>내부 분석, 외부 영향 없음</td>
+            </tr>
+            <tr>
+              <td>29CM 리뷰·VOC 교차 검증</td>
+              <td><span class="chip chip-auto">자동 실행</span></td>
+              <td>공개 데이터 수집, 외부 게시 없음</td>
+            </tr>
+            <tr>
+              <td>개선 우선순위 보고서·판단 근거 대시보드 생성</td>
+              <td><span class="chip chip-auto">자동 실행</span></td>
+              <td>내부 결과물, AI 판단 근거 투명 공개</td>
+            </tr>
+            <tr>
+              <td>개선 가설 확정</td>
+              <td><span class="chip chip-human">인간 검토</span></td>
+              <td>데모 데이터 한계 보정 + 방향 결정 분기점</td>
+            </tr>
+            <tr>
+              <td>A/B 테스트 계획·기능 요구사항 초안 생성</td>
+              <td><span class="chip chip-auto">자동 실행</span></td>
+              <td>미확정 초안, 미실행 상태</td>
+            </tr>
+            <tr>
+              <td>A/B 테스트 계획·기능 요구사항 최종 승인</td>
+              <td><span class="chip chip-human">인간 검토</span></td>
+              <td>실제 테스트 실행 전 최종 의사결정</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ax-section">
+        <div class="ax-section-header">
+          <div style="width:26px;height:26px;background:rgba(255,96,0,0.12);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+            <span style="color:#FF6000;font-size:16px;font-weight:700;line-height:1;">"</span>
+          </div>
+          <span class="ax-section-title">한 문장 과제 정의</span>
+        </div>
+        <div class="one-sentence">
+          나는 GA4 Demo Dataset·Amplitude Demo Data(정량)와 29CM 앱 리뷰·커뮤니티 VOC(정성)를 근거로, '영향 사용자 수 → 핵심 퍼널 영향도 → 이탈률 → VOC 빈도' 순위 기준에 따라 29CM의 개선 과제를 우선 선별하고, 개선 우선순위 보고서와 판단 근거 대시보드를 생성한다. 또한 인간이 대시보드를 검토하여 개선 가설을 확정하면, AI는 A/B 테스트 계획과 기능 요구사항 초안을 생성하며, 최종 실행 여부는 인간이 검토·승인하는 AI Product Analyst Agent를 만든다.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>종합 평가 및 다음 단계 제언</h2>
+    <div class="assessment-box">
+      <div class="sub-section">
+        <div class="sub-title">핵심 강점</div>
+        <ul class="check-list">
+          <li>분석 대상(29CM)을 명확히 설정하여 에이전트의 맥락과 목적이 구체적으로 정의됨</li>
+          <li>정량(GA4·Amplitude)과 정성(리뷰·VOC) 교차 검증 구조로 데모 데이터 한계를 구조적으로 보완</li>
+          <li>기준 충돌 처리 규칙(1~4순위)을 명시하여 에이전트 판단의 일관성과 예측 가능성 확보</li>
+          <li>판단 근거 대시보드로 AI 결정을 인간이 직접 검증 가능하도록 설계 — 투명성 내재화</li>
+          <li>자동 실행 → 인간 확정 → 자동 초안 → 인간 승인의 이중 검토 구조로 리스크 통제</li>
+        </ul>
+      </div>
+      <div class="sub-section" style="margin-bottom:0;">
+        <div class="sub-title">2~3주차 보완 제언</div>
+        <ul class="arrow-list">
+          <li><strong>교차 검증 임계값 정의</strong> — VOC 몇 건 이상·몇 개 채널 이상에서 언급되어야 '동일 문제 확인'으로 간주할지 수치화하면 에이전트 일관성 향상</li>
+          <li><strong>가설 템플릿 구조화</strong> — "우리가 [대상 화면]의 [문제]를 [방식]으로 개선하면 [지표]가 향상될 것이다" 형식의 가설 포맷을 사전 정의하면 A/B 테스트 초안 품질 향상</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>본 문서는 1주차 AI 학습 과제 설계 코치 세션의 공식 산출물입니다.</p>
+    <p>AX 에이전트 설계 코치 v10 · 2026년 06월 19일 자동 작성</p>
+  </footer>
+
+</div>
+</body>
+</html>
