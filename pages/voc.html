@@ -395,7 +395,13 @@
     </div>
 
     <!-- VOC 원문 카드 -->
-    <div class="sec-label">VOC 원문</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div class="sec-label" style="margin-bottom:0;">VOC 원문</div>
+      <button onclick="downloadCSV()" style="display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink-3);font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .12s;" onmouseover="this.style.borderColor='var(--orange)';this.style.color='var(--orange)';" onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--ink-3)';">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 1v7M3 5.5L6 8.5l3-3"/><path d="M1 10h10"/></svg>
+        Google Sheets용 CSV
+      </button>
+    </div>
     <div style="margin-bottom:12px;">
       <div class="source-pills">
         <div class="src-pill active" onclick="filterVoc('all', this)">
@@ -576,6 +582,41 @@ function filterVoc(type, el) {
 }
 
 renderVoc('all');
+
+/* ── CSV 다운로드 ── */
+function downloadCSV() {
+  const srcLabel  = { review: '앱스토어 리뷰', community: '커뮤니티' };
+  const catLabel  = { pay: '결제·정산', join: '회원가입', search: '검색·필터', img: '이미지·로딩', return: '교환·환불' };
+  const sentLabel = { negative: '부정', neutral: '중립', positive: '긍정' };
+
+  const escape = v => {
+    if (v == null) return '';
+    const s = String(v);
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const headers = ['번호', '소스', '카테고리', '감성', '별점', '날짜', '플랫폼', '리뷰 내용'];
+  const rows = VOC_DATA.map((v, i) => [
+    i + 1,
+    srcLabel[v.src] || v.src,
+    catLabel[v.cat] || v.cat,
+    sentLabel[v.sent] || v.sent,
+    v.stars != null ? v.stars : '',
+    v.date,
+    v.platform,
+    v.text,
+  ].map(escape).join(','));
+
+  const csv = '﻿' + [headers.join(','), ...rows].join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = '29CM_VOC_데이터_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/Portfolio/sw.js');
 </script>
 
