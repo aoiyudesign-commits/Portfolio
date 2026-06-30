@@ -78,7 +78,7 @@
     }
 
     /* ── Cards grid ── */
-    .lv-cards { display: grid; grid-template-columns: repeat(3, 240px); gap: 14px; margin-bottom: 36px; }
+    .lv-cards { display: grid; grid-template-columns: repeat(2, 240px); gap: 14px; margin-bottom: 36px; }
 
     /* Glass card */
     .lv-card {
@@ -151,7 +151,7 @@
   @media (max-width: 768px) {
     body { overflow-y: auto; height: auto; min-height: 100dvh; }
     .landing { position: relative; padding: 32px 20px 100px; min-height: 100dvh; }
-    .lv-cards { grid-template-columns: 1fr; width: 100%; max-width: 400px; }
+    .lv-cards { grid-template-columns: repeat(2, 1fr); width: 100%; max-width: 520px; }
     .lv-title { font-size: 28px; }
     .lv-cards .card { width: 100%; }
     .bottom-nav-land { display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: 64px; background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.08); align-items: center; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); z-index: 100; }
@@ -323,12 +323,48 @@
       </div>
     </div>
 
+    <!-- 발표 슬라이드 -->
+    <div class="lv-card" id="card3" onclick="go('pages/presentation.html')">
+      <div class="card-label">발표 슬라이드</div>
+      <div class="card-art" style="background:#0a0a0a;">
+        <svg width="220" height="196" viewBox="0 0 220 196" fill="none">
+          <!-- slide frame -->
+          <rect x="18" y="20" width="184" height="120" rx="8" fill="#1a1a1a" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <!-- slide header bar -->
+          <rect x="18" y="20" width="184" height="30" rx="8" fill="#FF6000" opacity="0.9"/>
+          <rect x="18" y="38" width="184" height="12" fill="#FF6000" opacity="0.9"/>
+          <!-- title text on slide -->
+          <text x="30" y="42" font-family="Inter" font-size="7.5" font-weight="800" fill="white">AI Requirements Analyst</text>
+          <!-- content lines -->
+          <rect x="30" y="62" width="80" height="5" rx="2.5" fill="rgba(255,96,0,0.7)"/>
+          <rect x="30" y="72" width="140" height="4" rx="2" fill="rgba(255,255,255,0.2)"/>
+          <rect x="30" y="80" width="120" height="4" rx="2" fill="rgba(255,255,255,0.2)"/>
+          <rect x="30" y="88" width="130" height="4" rx="2" fill="rgba(255,255,255,0.2)"/>
+          <!-- bullet points -->
+          <circle cx="33" cy="100" r="2" fill="#FF6000" opacity="0.8"/>
+          <rect x="38" y="97" width="90" height="4" rx="2" fill="rgba(255,255,255,0.15)"/>
+          <circle cx="33" cy="110" r="2" fill="#FF6000" opacity="0.5"/>
+          <rect x="38" y="107" width="70" height="4" rx="2" fill="rgba(255,255,255,0.1)"/>
+          <!-- slide counter -->
+          <text x="168" y="130" font-family="Inter" font-size="5.5" fill="rgba(255,255,255,0.3)">1 / 12</text>
+          <!-- slide nav dots -->
+          <circle cx="96" cy="155" r="3.5" fill="#FF6000"/>
+          <circle cx="107" cy="155" r="2.5" fill="rgba(255,255,255,0.2)"/>
+          <circle cx="116" cy="155" r="2.5" fill="rgba(255,255,255,0.2)"/>
+          <circle cx="125" cy="155" r="2.5" fill="rgba(255,255,255,0.2)"/>
+          <!-- presenter label -->
+          <text x="88" y="178" font-family="Inter" font-size="6" fill="rgba(255,255,255,0.25)">김유빈 · Week 1</text>
+        </svg>
+      </div>
+    </div>
+
   </div>
 
   <div class="lv-hint">
     Press <span class="kbd">D</span> Dashboard &nbsp;·&nbsp;
     <span class="kbd">C</span> Canvas &nbsp;·&nbsp;
     <span class="kbd">R</span> Report &nbsp;·&nbsp;
+    <span class="kbd">P</span> Presentation &nbsp;·&nbsp;
     <span class="kbd">Esc</span> Back
   </div>
 
@@ -357,6 +393,7 @@ document.addEventListener('keydown', e => {
   if (e.key==='d'||e.key==='D') go('pages/dashboard.html');
   if (e.key==='c'||e.key==='C') go('pages/canvas.html');
   if (e.key==='r'||e.key==='R') go('pages/report.html');
+  if (e.key==='p'||e.key==='P') go('pages/presentation.html');
 });
 /* Service Worker */
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/Portfolio/sw.js');

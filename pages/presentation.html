@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Requirements Analyst — 김유빈 발표</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #FF6000;
+      --orange-dim: rgba(255,96,0,0.12);
+      --dark: #1E1E1E;
+      --dark2: #2C2C2C;
+      --mid: #555;
+      --light: #FAFAF9;
+      --border: #E5E5E3;
+      --red: #DC2626;
+      --blue: #2563EB;
+      --green: #16A34A;
+    }
+
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #111;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      line-height: 1; display: inline-flex; align-items: center; justify-content: center;
+      vertical-align: middle;
+    }
+
+    /* ── Progress bar ── */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 3px;
+      background: var(--orange); transition: width 0.4s ease; z-index: 1000;
+    }
+
+    /* ── Slide counter ── */
+    #counter {
+      position: fixed; bottom: 20px; right: 28px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.35); z-index: 1000; user-select: none;
+    }
+    #counter.dark-text { color: rgba(0,0,0,0.3); }
+
+    /* ── Nav arrows ── */
+    .nav-arrow {
+      position: fixed; top: 50%; transform: translateY(-50%);
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 1000; transition: background 0.2s;
+      color: rgba(255,255,255,0.5); font-size: 18px; user-select: none;
+    }
+    .nav-arrow:hover { background: rgba(255,255,255,0.18); color: #fff; }
+    .nav-arrow.dark { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.3); }
+    .nav-arrow.dark:hover { background: rgba(0,0,0,0.12); color: #333; }
+    #nav-prev { left: 16px; }
+    #nav-next { right: 16px; }
+
+    /* ── Slide wrapper ── */
+    #deck {
+      width: 100vw; height: 100vh;
+      position: relative; overflow: hidden;
+    }
+
+    .slide {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      transform: translateX(40px);
+    }
+    .slide.active {
+      opacity: 1; pointer-events: auto; transform: translateX(0);
+    }
+    .slide.prev {
+      opacity: 0; transform: translateX(-40px);
+    }
+
+    /* ── Slide themes ── */
+    .slide-dark { background: var(--dark); }
+    .slide-light { background: var(--light); }
+    .slide-orange { background: var(--orange); }
+    .slide-dark2 { background: #141414; }
+
+    /* ── Slide content inner ── */
+    .slide-inner {
+      width: min(880px, 92vw);
+      max-height: 92vh;
+      overflow: hidden;
+    }
+
+    /* ══════════════════════════════════════
+       SHARED TYPOGRAPHIC TOKENS
+    ══════════════════════════════════════ */
+    .label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; margin-bottom: 10px;
+    }
+    .label-o { color: var(--orange); }
+    .label-w { color: rgba(255,255,255,0.55); }
+    .label-d { color: var(--mid); }
+
+    .display {
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 900; line-height: 1.18; letter-spacing: -0.02em;
+    }
+    .display-w { color: #FFF; }
+    .display-d { color: var(--dark2); }
+    .display-o { color: var(--orange); }
+
+    .headline {
+      font-size: clamp(22px, 3.2vw, 36px);
+      font-weight: 800; line-height: 1.3; letter-spacing: -0.01em;
+    }
+    .headline-w { color: #FFF; }
+    .headline-d { color: var(--dark2); }
+
+    .body-lg { font-size: 16px; line-height: 1.75; color: rgba(255,255,255,0.75); }
+    .body-lg.dark-mode { color: var(--mid); }
+
+    .accent { color: var(--orange); }
+    .em-w { color: #FFF; font-weight: 700; }
+
+    .divider-o {
+      width: 44px; height: 3px; background: var(--orange);
+      border-radius: 2px; margin: 16px 0 20px;
+    }
+    .divider-w {
+      width: 44px; height: 3px; background: rgba(255,255,255,0.3);
+      border-radius: 2px; margin: 16px 0 20px;
+    }
+    .divider-d {
+      width: 44px; height: 3px; background: var(--orange);
+      border-radius: 2px; margin: 16px 0 20px;
+    }
+
+    /* Tags */
+    .tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 22px; }
+    .tag {
+      font-size: 11.5px; font-weight: 700; padding: 4px 12px; border-radius: 20px;
+    }
+    .tag-outline-w { border: 1.5px solid rgba(255,255,255,0.35); color: rgba(255,255,255,0.75); }
+    .tag-outline-o { border: 1.5px solid rgba(255,96,0,0.4); color: var(--orange); background: rgba(255,96,0,0.06); }
+    .tag-solid-o { background: var(--orange); color: #FFF; }
+
+    /* ══════════════════════════════════════
+       SLIDE 1 — Cover
+    ══════════════════════════════════════ */
+    .s1-meta {
+      font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.4);
+      margin-top: 30px; display: flex; gap: 20px; align-items: center;
+    }
+    .s1-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+    }
+
+    /* ══════════════════════════════════════
+       SLIDE 2 — Opening Hook
+    ══════════════════════════════════════ */
+    .hook-q {
+      font-size: clamp(28px, 4.5vw, 52px);
+      font-weight: 900; line-height: 1.22; color: #FFF;
+      letter-spacing: -0.02em; margin-bottom: 32px;
+    }
+    .hook-q .accent { color: var(--orange); }
+    .channel-row {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px;
+    }
+    .ch-chip {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px; padding: 6px 14px;
+      font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.7);
+    }
+    .ch-dot { width: 6px; height: 6px; border-radius: 50%; background: #94A3B8; flex-shrink: 0; }
+    .hook-ans {
+      font-size: 20px; font-weight: 800; color: rgba(255,255,255,0.35);
+      border-left: 3px solid var(--orange); padding-left: 16px; line-height: 1.6;
+    }
+    .hook-ans span { color: #FFF; }
+
+    /* ══════════════════════════════════════
+       SLIDE 3 — Problem
+    ══════════════════════════════════════ */
+    .prob-flow {
+      background: rgba(220,38,38,0.06); border: 1.5px solid rgba(220,38,38,0.2);
+      border-radius: 12px; padding: 18px 22px; margin-bottom: 20px;
+    }
+    .prob-sources {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;
+    }
+    .prob-src {
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(220,38,38,0.3);
+      border-radius: 6px; padding: 5px 12px;
+      font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.8);
+    }
+    .prob-arrow { text-align: center; color: rgba(220,38,38,0.5); font-size: 20px; margin: 6px 0; }
+    .prob-process {
+      background: rgba(255,255,255,0.04); border: 2px dashed rgba(220,38,38,0.35);
+      border-radius: 10px; padding: 14px 18px;
+      display: flex; align-items: center; gap: 14px; margin-bottom: 12px;
+    }
+    .prob-icon-w {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(220,38,38,0.15);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      color: #F87171; font-size: 20px;
+    }
+    .prob-text strong { display: block; font-size: 15px; font-weight: 800; color: #FCA5A5; margin-bottom: 2px; }
+    .prob-text span   { font-size: 13px; color: rgba(255,255,255,0.5); }
+    .time-badge {
+      display: inline-block; background: rgba(220,38,38,0.2); color: #F87171;
+      font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 4px; margin-left: 8px;
+    }
+    .pain-tags { display: flex; gap: 7px; flex-wrap: wrap; }
+    .pain-tag {
+      font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 4px;
+      background: rgba(220,38,38,0.12); color: #F87171; border: 1px solid rgba(220,38,38,0.25);
+    }
+    .prob-cards { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; }
+    .prob-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 12px 10px; text-align: center;
+      border-top: 3px solid var(--red);
+    }
+    .prob-card .pc-icon { color: #F87171; font-size: 20px; margin-bottom: 6px; }
+    .prob-card .pc-t { font-size: 11.5px; font-weight: 700; color: #F87171; margin-bottom: 4px; }
+    .prob-card .pc-d { font-size: 10.5px; color: rgba(255,255,255,0.45); line-height: 1.5; }
+
+    /* ══════════════════════════════════════
+       SLIDE 4 — Priority Score
+    ══════════════════════════════════════ */
+    .score-grid {
+      display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px;
+    }
+    .score-row {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 80px 60px;
+      gap: 0; align-items: center;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; padding: 10px 14px;
+    }
+    .score-row.first {
+      background: rgba(255,96,0,0.1); border-color: rgba(255,96,0,0.35);
+    }
+    .score-row.header {
+      background: transparent; border: none; padding-bottom: 4px;
+    }
+    .score-row.header span { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.35); text-align: center; }
+    .score-row.header .sr-task { text-align: left; }
+    .sr-task { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.8); }
+    .score-row.first .sr-task { color: #FFF; }
+    .sn {
+      width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto;
+    }
+    .s5 { background: rgba(255,96,0,0.2); color: var(--orange); }
+    .s4 { background: rgba(255,96,0,0.08); color: #CC4D00; }
+    .s3 { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.4); }
+    .total-badge {
+      font-size: 14px; font-weight: 900; text-align: center;
+    }
+    .t20 { color: var(--orange); }
+    .t18 { color: rgba(255,96,0,0.7); }
+    .t17 { color: rgba(255,96,0,0.5); }
+    .t14 { color: rgba(255,255,255,0.25); }
+    .rank-badge {
+      font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-align: center;
+    }
+    .r1 { background: var(--orange); color: #FFF; }
+    .r2 { background: rgba(255,96,0,0.12); color: #CC4D00; border: 1px solid rgba(255,96,0,0.3); }
+    .r3 { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.1); }
+    .score-reason {
+      background: rgba(255,96,0,0.07); border-left: 3px solid var(--orange);
+      border-radius: 0 8px 8px 0; padding: 12px 16px;
+      font-size: 13.5px; line-height: 1.75; color: rgba(255,255,255,0.75);
+    }
+    .score-reason strong { color: #FFF; }
+
+    /* ══════════════════════════════════════
+       SLIDE 5 — Agent 소개
+    ══════════════════════════════════════ */
+    .ps-map-w {
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; margin-bottom: 20px;
+    }
+    .ps-col-w {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; overflow: hidden;
+    }
+    .ps-hd { padding: 8px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; }
+    .ps-hd-before { background: rgba(220,38,38,0.15); color: #F87171; }
+    .ps-hd-after  { background: rgba(255,96,0,0.15); color: var(--orange); }
+    .ps-row {
+      display: flex; align-items: center; gap: 8px; padding: 7px 14px;
+      font-size: 12.5px; color: rgba(255,255,255,0.7);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .ps-row:last-child { border-bottom: none; }
+    .ps-row .material-symbols-outlined { font-size: 14px; color: #F87171; }
+    .ps-arrow-w {
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 16px; font-size: 22px; font-weight: 900; color: var(--orange);
+    }
+    .cap-grid-w { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+    .cap-card-w {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-top: 3px solid var(--orange);
+      border-radius: 10px; padding: 14px 12px; text-align: center;
+    }
+    .cap-card-w .cc-icon { color: var(--orange); font-size: 22px; margin-bottom: 8px; }
+    .cap-card-w .cc-t { font-size: 12px; font-weight: 700; color: #FFF; margin-bottom: 4px; }
+    .cap-card-w .cc-d { font-size: 11px; color: rgba(255,255,255,0.45); line-height: 1.5; }
+
+    /* ══════════════════════════════════════
+       SLIDE 6 — Workflow
+    ══════════════════════════════════════ */
+    .wf-wrap { display: flex; flex-direction: column; gap: 0; }
+    .wf-zone-w {
+      display: flex; border-radius: 10px; overflow: hidden;
+      border: 1.5px solid rgba(255,255,255,0.1); margin-bottom: 8px;
+    }
+    .wf-lbl {
+      writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg);
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px 9px; font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; min-width: 32px; flex-shrink: 0;
+    }
+    .wf-body-w { flex: 1; padding: 12px 16px; }
+    .wf-input-w { border-color: #475569; }
+    .wf-input-w .wf-lbl { background: #475569; color: #FFF; }
+    .wf-input-w .wf-body-w { background: rgba(71,85,105,0.1); }
+    .wf-proc-w { border-color: var(--orange); }
+    .wf-proc-w .wf-lbl { background: var(--orange); color: #FFF; }
+    .wf-proc-w .wf-body-w { background: rgba(255,96,0,0.04); }
+    .wf-out-w { border-color: #2563EB; }
+    .wf-out-w .wf-lbl { background: #2563EB; color: #FFF; }
+    .wf-out-w .wf-body-w { background: rgba(37,99,235,0.07); }
+    .wf-hum-w { border-color: #16A34A; }
+    .wf-hum-w .wf-lbl { background: #16A34A; color: #FFF; }
+    .wf-hum-w .wf-body-w { background: rgba(22,163,74,0.07); }
+    .in-chips-w { display: flex; gap: 7px; flex-wrap: wrap; }
+    .in-chip-w {
+      display: flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; padding: 4px 11px;
+      font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.65);
+    }
+    .in-dot-w { width: 5px; height: 5px; border-radius: 50%; background: #64748B; }
+    .proc-inline {
+      display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    }
+    .step-pill {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.75);
+    }
+    .step-num {
+      width: 20px; height: 20px; border-radius: 50%; background: var(--orange);
+      color: #FFF; font-size: 9px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .step-sep { color: rgba(255,96,0,0.4); font-size: 14px; }
+    .out-chips-w { display: flex; gap: 8px; flex-wrap: wrap; }
+    .out-chip-w {
+      display: flex; align-items: center; gap: 5px;
+      background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.2);
+      border-radius: 6px; padding: 5px 12px;
+      font-size: 12px; font-weight: 600; color: #93C5FD;
+    }
+    .hc-w {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .hc-badge-w {
+      width: 34px; height: 34px; border-radius: 50%; background: #16A34A;
+      display: flex; align-items: center; justify-content: center;
+      color: #FFF; font-size: 17px; flex-shrink: 0;
+    }
+    .hc-text strong { display: block; font-size: 13px; font-weight: 700; color: #86EFAC; margin-bottom: 1px; }
+    .hc-text span { font-size: 12px; color: rgba(255,255,255,0.45); }
+
+    /* ══════════════════════════════════════
+       SLIDE 7 — Key Moment
+    ══════════════════════════════════════ */
+    .key-script {
+      font-size: clamp(16px, 2.2vw, 22px);
+      line-height: 1.85; color: rgba(255,255,255,0.55); font-weight: 500;
+      margin-bottom: 32px;
+    }
+    .key-script .ks-em { color: #FFF; font-weight: 800; }
+    .key-script .ks-o { color: var(--orange); font-weight: 800; }
+    .key-flow {
+      display: flex; align-items: center; gap: 0; margin-bottom: 32px;
+    }
+    .kf-box {
+      flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 14px 16px; text-align: center;
+    }
+    .kf-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: rgba(255,255,255,0.3); margin-bottom: 8px; }
+    .kf-list { display: flex; flex-direction: column; gap: 4px; }
+    .kf-item { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.55); }
+    .kf-arrow {
+      font-size: 22px; color: var(--orange); font-weight: 900;
+      padding: 0 12px; flex-shrink: 0;
+    }
+    .kf-result {
+      flex: 1.2; background: rgba(255,96,0,0.1); border: 2px solid rgba(255,96,0,0.4);
+      border-radius: 10px; padding: 14px 16px; text-align: center;
+    }
+    .kf-result .kf-label { color: var(--orange); }
+    .kf-result .kf-item { color: rgba(255,255,255,0.8); }
+    .metric-band {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
+    }
+    .met-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 18px 16px; text-align: center;
+      border-bottom: 3px solid var(--orange);
+    }
+    .met-num { font-size: 38px; font-weight: 900; color: var(--orange); line-height: 1; margin-bottom: 6px; }
+    .met-label { font-size: 13px; font-weight: 700; color: #FFF; margin-bottom: 3px; }
+    .met-desc { font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.4; }
+
+    /* ══════════════════════════════════════
+       SLIDE 8 — Demo / 실행 결과
+    ══════════════════════════════════════ */
+    .demo-wrap {
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: start;
+    }
+    .demo-col {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 10px; overflow: hidden;
+    }
+    .demo-hd {
+      padding: 9px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    }
+    .demo-hd-in { background: rgba(71,85,105,0.3); color: #94A3B8; }
+    .demo-hd-out { background: rgba(37,99,235,0.2); color: #93C5FD; }
+    .demo-body { padding: 14px; font-size: 12px; line-height: 1.75; }
+    .demo-body-in { color: rgba(255,255,255,0.55); font-style: italic; }
+    .demo-body-out { color: rgba(255,255,255,0.8); }
+    .demo-arrow { display: flex; align-items: center; justify-content: center; padding: 0 16px; }
+    .demo-arrow span { font-size: 24px; color: var(--orange); font-weight: 900; }
+    .out-table-sm { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .out-table-sm th {
+      background: rgba(37,99,235,0.2); color: #93C5FD;
+      padding: 5px 8px; font-size: 10px; font-weight: 700; text-align: left;
+    }
+    .out-table-sm td {
+      padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.7); vertical-align: top;
+    }
+    .out-table-sm tr:last-child td { border-bottom: none; }
+    .tag-sm {
+      font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px;
+      display: inline-block; white-space: nowrap;
+    }
+    .tag-bug { background: rgba(220,38,38,0.15); color: #F87171; }
+    .tag-new { background: rgba(255,96,0,0.12); color: var(--orange); }
+    .tag-high { background: rgba(220,38,38,0.15); color: #F87171; }
+    .tag-mid  { background: rgba(234,179,8,0.15); color: #FDE047; }
+    .tag-low  { background: rgba(34,197,94,0.12); color: #86EFAC; }
+    .demo-note {
+      margin-top: 16px; background: rgba(255,96,0,0.07);
+      border-left: 3px solid var(--orange);
+      border-radius: 0 8px 8px 0; padding: 10px 14px;
+      font-size: 12.5px; color: rgba(255,255,255,0.6); line-height: 1.65;
+    }
+    .demo-note strong { color: #FFF; }
+
+    /* ══════════════════════════════════════
+       SLIDE 9 — 전후 비교 KPI
+    ══════════════════════════════════════ */
+    .ba-table-w { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
+    .ba-table-w th {
+      padding: 9px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+    }
+    .ba-table-w th.th-item { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.35); text-align: left; }
+    .ba-table-w th.th-before { background: rgba(71,85,105,0.25); color: #94A3B8; text-align: center; }
+    .ba-table-w th.th-after { background: var(--orange); color: #FFF; text-align: center; }
+    .ba-table-w td {
+      padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: middle;
+    }
+    .ba-table-w tr:last-child td { border-bottom: none; }
+    .ba-table-w .td-item { font-weight: 700; color: rgba(255,255,255,0.55); }
+    .ba-table-w .td-before { color: rgba(255,255,255,0.35); text-align: center; font-size: 12.5px; }
+    .ba-table-w .td-after { color: #FF9D6B; font-weight: 700; text-align: center; font-size: 13px; }
+    .imp-badge {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      padding: 1px 7px; border-radius: 10px;
+      background: var(--orange); color: #FFF; margin-left: 6px; vertical-align: middle;
+    }
+    .met-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+    .met-mini {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 10px; padding: 14px 12px; text-align: center;
+      border-bottom: 3px solid var(--orange);
+    }
+    .met-mini .mn { font-size: 28px; font-weight: 900; color: var(--orange); line-height: 1; margin-bottom: 4px; }
+    .met-mini .ml2 { font-size: 11.5px; font-weight: 700; color: #FFF; margin-bottom: 2px; }
+    .met-mini .md { font-size: 10.5px; color: rgba(255,255,255,0.35); }
+
+    /* ══════════════════════════════════════
+       SLIDE 10 — 멘탈모델 변화
+    ══════════════════════════════════════ */
+    .mm-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 24px; }
+    .mm-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 20px 18px;
+    }
+    .mm-num {
+      width: 28px; height: 28px; border-radius: 50%; background: var(--orange);
+      color: #FFF; font-size: 13px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
+    }
+    .mm-t { font-size: 15px; font-weight: 800; color: #FFF; margin-bottom: 8px; }
+    .mm-q { font-size: 11.5px; font-weight: 700; color: var(--orange); margin-bottom: 6px; }
+    .mm-d { font-size: 12.5px; color: rgba(255,255,255,0.55); line-height: 1.65; }
+    .mm-insight {
+      background: rgba(255,255,255,0.04); border-left: 3px solid var(--orange);
+      border-radius: 0 10px 10px 0; padding: 14px 20px;
+    }
+    .mm-insight-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: var(--orange); margin-bottom: 6px; }
+    .mm-insight-text { font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.75); line-height: 1.7; }
+
+    /* ══════════════════════════════════════
+       SLIDE 11 — Closing
+    ══════════════════════════════════════ */
+    .closing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+    .closing-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 10px; padding: 18px 16px;
+    }
+    .cc-title { font-size: 13px; font-weight: 800; color: #FFF; margin-bottom: 6px; }
+    .cc-body { font-size: 12.5px; color: rgba(255,255,255,0.5); line-height: 1.7; }
+    .roadmap { display: flex; gap: 0; align-items: center; flex-wrap: wrap; }
+    .rm-step {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 8px; padding: 8px 14px;
+      font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.65);
+    }
+    .rm-num {
+      width: 20px; height: 20px; border-radius: 50%; background: var(--orange);
+      color: #FFF; font-size: 9px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .rm-arrow { font-size: 14px; color: rgba(255,96,0,0.4); padding: 0 6px; }
+    .final-line {
+      text-align: center; margin-top: 24px;
+      font-size: clamp(15px, 2.2vw, 22px); font-weight: 800;
+      color: rgba(255,255,255,0.8); line-height: 1.6;
+    }
+    .final-line .hl { color: var(--orange); }
+
+    /* ══════════════════════════════════════
+       SECTION HEADER SLIDES
+    ══════════════════════════════════════ */
+    .section-slide {
+      display: flex; flex-direction: column;
+      align-items: flex-start; justify-content: center;
+      height: 100%;
+    }
+
+    /* ══════════════════════════════════════
+       SLIDE NAV DOTS
+    ══════════════════════════════════════ */
+    #dots {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 6px; z-index: 1000;
+    }
+    .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,0.2); cursor: pointer; transition: all 0.2s;
+    }
+    .dot.active { background: var(--orange); transform: scale(1.3); }
+    #dots.dark-dots .dot { background: rgba(0,0,0,0.15); }
+    #dots.dark-dots .dot.active { background: var(--orange); }
+
+    /* two-col layout */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    .sec-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--orange); margin-bottom: 8px;
+    }
+    .sec-hd { font-size: clamp(20px, 2.8vw, 32px); font-weight: 800; color: var(--dark2); margin-bottom: 6px; line-height: 1.25; }
+    .sec-sub { font-size: 14px; color: var(--mid); margin-bottom: 20px; line-height: 1.65; }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<button class="nav-arrow" id="nav-prev" onclick="go(-1)">&#8592;</button>
+<button class="nav-arrow" id="nav-next" onclick="go(1)">&#8594;</button>
+
+<div id="dots"></div>
+<div id="counter"></div>
+
+<div id="deck">
+
+  <!-- ════════════════════════
+       SLIDE 0  ·  Cover
+  ════════════════════════ -->
+  <div class="slide slide-dark active" data-theme="dark">
+    <div class="slide-inner">
+      <div class="label label-o">AI PM Agent · Case Study</div>
+      <div class="display display-w">AI Requirements<br>Analyst</div>
+      <div class="divider-o"></div>
+      <div class="body-lg">
+        고객사 요구사항을 구조화하여<br>
+        분류 테이블 · User Story · PRD 초안을 자동 생성하는 <span class="em-w">AI PM Agent</span>
+      </div>
+      <div class="tag-row">
+        <span class="tag tag-outline-w">서비스 기획</span>
+        <span class="tag tag-outline-w">요구사항 분석</span>
+        <span class="tag tag-outline-w">PRD 자동화</span>
+        <span class="tag tag-outline-w">AX 업무 자동화</span>
+        <span class="tag tag-solid-o">AI PM Assistant</span>
+      </div>
+      <div class="s1-meta">
+        <span>김유빈</span>
+        <span class="s1-dot"></span>
+        <span>광화문 라이언즈 3기</span>
+        <span class="s1-dot"></span>
+        <span>2026</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════
+       SLIDE 1  ·  Opening Hook
+  ════════════════════════ -->
+  <div class="slide slide-dark2" data-theme="dark">
+    <div class="slide-inner">
+      <div class="label label-o">Opening · 오프닝</div>
+      <div class="hook-q">
+        요구사항 정리,<br>일주일에 <span class="accent">몇 시간</span> 쓰고 계신가요?
+      </div>
+      <div class="channel-row">
+        <div class="ch-chip"><span class="ch-dot"></span>회의록</div>
+        <div class="ch-chip"><span class="ch-dot"></span>이메일</div>
+        <div class="ch-chip"><span class="ch-dot"></span>VOC</div>
+        <div class="ch-chip"><span class="ch-dot"></span>메신저 (카카오톡·Slack)</div>
+        <div class="ch-chip"><span class="ch-dot"></span>내부 메모</div>
+      </div>
+      <div class="hook-ans">
+        채널마다 흩어진 요구사항,<br>
+        <span>한 곳에서 정리하는 데 주 4시간이 사라집니다.</span><br>
+        저도 그랬습니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════
+       SLIDE 2  ·  Problem
+  ════════════════════════ -->
+  <div class="slide slide-dark" data-theme="dark">
+    <div class="slide-inner">
+      <div class="label label-o">맥락 · Problem Definition</div>
+      <div class="headline headline-w" style="margin-bottom:6px;">5개 채널, 수작업 정리, 주 <span style="color:var(--orange)">4시간</span></div>
+      <div style="margin-bottom:16px; font-size:13px;color:rgba(255,255,255,0.45);">고요에이아이 서비스기획팀 기획자의 하루</div>
+      <div class="prob-flow">
+        <div class="prob-sources">
+          <div class="prob-src">회의록</div>
+          <div class="prob-src">이메일</div>
+          <div class="prob-src">VOC</div>
+          <div class="prob-src">메신저</div>
+          <div class="prob-src">내부 메모</div>
+        </div>
+        <div class="prob-arrow">↓</div>
+        <div class="prob-process">
+          <div class="prob-icon-w"><span class="material-symbols-outlined">person</span></div>
+          <div class="prob-text">
+            <strong>기획자가 채널을 돌아다니며 수작업으로 취합·분류<span class="time-badge">주 4시간</span></strong>
+            <span>복사 → 붙여넣기 → 분류 → 우선순위 판단 → 재검토 반복</span>
+          </div>
+        </div>
+        <div class="pain-tags">
+          <span class="pain-tag">채널별 분산</span>
+          <span class="pain-tag">누락 위험</span>
+          <span class="pain-tag">기준 불일치</span>
+          <span class="pain-tag">PRD 착수 지연</span>
+          <span class="pain-tag">반복 업무</span>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 18px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;color:var(--orange);margin-bottom:8px;">PROBLEM STATEMENT</div>
+        <div style="font-size:15px;font-weight:700;color:#FFF;line-height:1.75;">
+          멀티채널 요구사항을 수작업으로 정리하느라 기획자의 핵심 사고 시간이 침식되고 있다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════
+       SLIDE 3  ·  Priority Score
+  ════════════════════════ -->
+  <div class="slide slide-dark" data-theme="dark">
+    <div class="slide-inner">
+      <div class="label label-o">맥락 · 우선순위 분석</div>
+      <div class="headline headline-w" style="margin-bottom:4px;">5개 반복 업무 중 <span style="color:var(--orange)">만점</span>을 받은 단 하나</div>
+      <div style="font-size:12.5px;color:rgba(255,255,255,0.4);margin-bottom:16px;">반복 빈도 · 절감 효과 · 구현 가능성 · ROI × 4개 기준 점수표</div>
+      <div class="score-grid">
+        <div class="score-row header">
+          <span class="sr-task">반복 업무</span>
+          <span>반복 빈도</span><span>절감 효과</span><span>구현</span><span>ROI</span>
+          <span>총점</span><span>순위</span>
+        </div>
+        <div class="score-row first">
+          <div class="sr-task">고객사 요구사항 정리 및 카테고리화</div>
+          <div><span class="sn s5">5</span></div><div><span class="sn s5">5</span></div>
+          <div><span class="sn s5">5</span></div><div><span class="sn s5">5</span></div>
+          <div class="total-badge t20">20</div><div><span class="rank-badge r1">1위</span></div>
+        </div>
+        <div class="score-row">
+          <div class="sr-task">기능 정의서(PRD) 초안 작성</div>
+          <div><span class="sn s4">4</span></div><div><span class="sn s5">5</span></div>
+          <div><span class="sn s4">4</span></div><div><span class="sn s5">5</span></div>
+          <div class="total-badge t18">18</div><div><span class="rank-badge r2">2위</span></div>
+        </div>
+        <div class="score-row">
+          <div class="sr-task">회의록 정리 및 액션아이템 도출</div>
+          <div><span class="sn s5">5</span></div><div><span class="sn s3">3</span></div>
+          <div><span class="sn s5">5</span></div><div><span class="sn s4">4</span></div>
+          <div class="total-badge t17">17</div><div><span class="rank-badge r2">3위</span></div>
+        </div>
+        <div class="score-row">
+          <div class="sr-task">AI 서비스 경쟁사 및 트렌드 리서치</div>
+          <div><span class="sn s3">3</span></div><div><span class="sn s3">3</span></div>
+          <div><span class="sn s5">5</span></div><div><span class="sn s3">3</span></div>
+          <div class="total-badge t14">14</div><div><span class="rank-badge r3">4위</span></div>
+        </div>
+      </div>
+      <div class="score-reason">
+        <strong>왜 이 업무인가 —</strong> 주 3회 이상 발생하는 고빈도 반복 업무이며, 요구사항 원문이 텍스트로 이미 존재해
+        <strong>AI 구현 가능성이 가장 높습니다.</strong> 분류 결과가 PRD 작성으로 직결되어
+        기획·개발·디자인 전 팀이 활용하는 <strong>ROI가 가장 큰</strong> 업무입니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════
+       SLIDE 4  ·  Agent 소개
+  ════════════════════════ -->
+  <div class="slide slide-dark2" data-theme="dark">
+    <div class="slide-inner">
+      <div class="label label-o">Solution · AI PM Agent</div>
+      <div class="headline headline-w" style="margin-bottom:4px;">AI Requirements Analyst</div>
+      <div style="font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:18px;">
+        비정형 요구사항 텍스트 → 분류 테이블 · User Story · PRD 초안까지
+      </div>
+      <div class="ps-map-w" style="margin-bottom:16px;">
+        <div class="ps-col-w">
+          <div class="ps-hd ps-hd-before">Problem — 기존 문제</div>
+          <div class="ps-row"><span class="material-symbols-outlined">cell_tower</span>채널별 요구사항 분산 관리</div>
+          <div class="ps-row"><span class="material-symbols-outlined">warning</span>요구사항 누락 발생</div>
+          <div class="ps-row"><span class="material-symbols-outlined">balance</span>우선순위 기준 불일치</div>
+          <div class="ps-row"><span class="material-symbols-outlined">schedule</span>PRD 작성 착수 지연</div>
+          <div class="ps-row"><span class="material-symbols-outlined">loop</span>동일 정리 업무 반복</div>
+        </div>
+        <div class="ps-arrow-w">→</div>
+        <div class="ps-col-w">
+          <div class="ps-hd ps-hd-after">Solution — Agent 대응</div>
+          <div class="ps-row">멀티채널 원문 단일 입력 통합 처리</div>
+          <div class="ps-row">자동 추출·분류로 누락 방지</div>
+          <div class="ps-row">4개 기준 기반 일관된 우선순위 산정</div>
+          <div class="ps-row">요구사항 정리와 동시에 PRD 초안 생성</div>
+          <div class="ps-row">반복 정리 업무 자동화</div>
+        </div>
+      </div>
+      <div class="cap-grid-w">
+        <div class="cap-card-w">
+          <div class="cc-icon"><span class="material-symbols-outlined">manage_search</span></div>
+          <div class="cc-t">자동 추출·분류</div>
+          <div class="cc-d">기능 유형·영향 범위·담당 조직 자동 분류</div>
+        </div>
+        <div class="cap-card-w">
+          <div class="cc-icon"><span class="material-symbols-outlined">balance</span></div>
+          <div class="cc-t">우선순위 산정</div>
+          <div class="cc-d">표현 패턴 기반 높음·중간·낮음 자동 추정</div>
+        </div>
+        <div class="cap-card-w">
+          <div class="cc-icon"><span class="material-symbols-outlined">person_edit</span></div>
+          <div class="cc-t">User Story 생성</div>
+          <div class="cc-d">As a / I want / So that 포맷 자동 작성</div>
+        </div>
+        <div class="cap-card-w">
+          <div class="cc-icon"><span class="material-symbols-outlined">draft</span></div>
+          <div class="cc-t">PRD 초안 생성</div>
+          <div class="cc-d">기능 정의서·기능 완료 조건 자동 생성</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════
+       SLIDE 5  ·  Workflow
+  ════════════════════════ -->
+  <div class="slide slide-dark" data-theme="dark">
+    <div class="slide-inner">
+      <div class="label label-o">전환 · Agent Workflow</div>
+      <div class="headline headline-w" style="margin-bottom:16px;">Input → AI 6단계 → Human Control</div>
+      <div class="wf-wrap">
+        <div class="wf-zone-w wf-input-w">
+          <div class="wf-lbl">Input</div>
+          <div class="wf-body-w">
+            <div class="in-chips-w">
+              <div class="in-chip-w"><span class="in-dot-w"></span>회의록</div>
+              <div class="in-chip-w"><span class="in-dot-w"></span>이메일</div>
+              <div class="in-chip-w"><span class="in-dot-w"></span>VOC</div>
+              <div class="in-chip-w"><span class="in-dot-w"></span>메신저 (카카오톡·Slack)</div>
+              <div class="in-chip-w"><span class="in-dot-w"></span>내부 메모</div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:14px;color:rgba(255,96,0,0.4);padding:4px 0;">▼</div>
+        <div class="wf-zone-w wf-proc-w">
+          <div class="wf-lbl">AI Processing</div>
+          <div class="wf-body-w">
+            <div class="proc-inline">
+              <span class="step-pill"><span class="step-num">①</span>요구사항 추출</span>
+              <span class="step-sep">→</span>
+              <span class="step-pill"><span class="step-num">②</span>카테고리 분류</span>
+              <span class="step-sep">→</span>
+              <span class="step-pill"><span class="step-num">③</span>우선순위 산정</span>
+              <span class="step-sep">→</span>
+              <span class="step-pill"><span class="step-num">④</span>구조화 테이블</span>
+              <span class="step-sep">→</span>
+              <span class="step-pill"><span class="step-num">⑤</span>User Story</span>
+              <span class="step-sep">→</span>
+              <span class="step-pill"><span class="step-num">⑥</span>PRD 초안</span>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:14px;color:rgba(37,99,235,0.5);padding:4px 0;">▼</div>
+        <div class="wf-zone-w wf-out-w">
+          <div class="wf-lbl">Output</div>
+          <div class="wf-body-w">
+            <div class="out-chips-w">
+              <div class="out-chip-w"><span class="material-symbols-outlined" style="font-size:14px;">table_view</span>요구사항 테이블</div>
+              <div class="out-chip-w"><span class="material-symbols-outlined" style="font-size:14px;">person_edit</span>User Story</div>
+              <div class="out-chip-w"><span class="material-symbols-outlined" style="font-size:14px;">draft</span>PRD 초안</div>
+              <div class="out-chip-w"><span class="material-symbols-outlined" style="font-size:14px;">task_alt</span>기능 완료 조건</div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:14px;color:rgba(22,163,74,0.5);padding:4px 0;">▼</div>
+        <div class="wf-zone-w wf-hum-w">
+          <div class="wf-lbl">Human</div>
+          <div class="wf-body-w">
+            <div class="hc-w">
+              <div class="hc-badge-w"><span class="material-symbols-outlined">manage_accounts</span></div>
+              <div class="hc-text">
+                <strong>서비스 기획자 검토 및 승인</strong>
+                <span>우선순위 확정 · 중복 병합 · 담당 조직 조정 · 모호 항목 보완 · PRD 최종 확인</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════
+       SLIDE 6  ·  Key Moment
+  ════════════════════════ -->
+  <div class="slide slide-dark2" data-theme="dark">
+    <div class="slide-inner">
+      <div class="label label-o">시연 · 핵심 장면</div>
+      <div class="key-script">
+        지금 여기에서 <span class="ks-em">채널 통합</span>이 일어납니다.<br>
+        앞뒤는 5개 채널을 각각 열어 복사-붙여넣기 하는데,<br>
+        <span class="ks-o">이 지점만</span> — 단일 입력으로 모든 분류가 완성됩니다.<br>
+        이것이 핵심입니다.
+      </div>
+      <div class="key-flow" style="margin-bottom:24px;">
+        <div class="kf-box">
+          <div class="kf-label">기존 방식</div>
+          <div class="kf-list">
+            <div class="kf-item">회의록 열기 → 복사</div>
+            <div class="kf-item">이메일 열기 → 복사</div>
+            <div class="kf-item">VOC 열기 → 복사</div>
+            <div class="kf-item">메신저 확인 → 복사</div>
+            <div class="kf-item" style="margin-top:4px;color:rgba(220,38,38,0.7);font-size:11px;">→ 수작업 분류 · 주 4시간</div>
+          </div>
+        </div>
+        <div class="kf-arrow">→</div>
+        <div class="kf-result">
+          <div class="kf-label">AI Requirements Analyst</div>
+          <div class="kf-list">
+            <div class="kf-item">텍스트 붙여넣기 (한 번)</div>
+            <div class="kf-item">요구사항 자동 추출</div>
+            <div class="kf-item">4개 기준 자동 분류</div>
+            <div class="kf-item">테이블 + User Story + PRD</div>
+            <div class="kf-item" style="margin-top:4px;color:var(--orange);font-size:11px;">→ 기획자 검토만 남음 · 주 1시간</div>
+          </div>
+        </div>
+      </div>
+      <div class="metric-band">
+        <div class="met-card">
+          <div class="met-num">75%</div>
+          <div class="met-label">정리 시간 감소</div>
+          <div class="met-desc">주 4시간 → 주 1시간</div>
+        </div>
+        <div class="met-card">
+          <div class="met-num">5→1</div>
+          <div class="met-label">채널 통합</div>
+          <div class="met-desc">멀티채널 단일 입력 처리</div>
+        </div>
+        <div class="met-card">
+          <div class="met-num">병렬</div>
+          <div class="met-label">PRD 동시 생성</div>
+          <div class="met-desc">정리와 동시에 초안 완성</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════
+       SLIDE 7  ·  Demo
+  ════════════════════════ -->
+  <div class="slide slide-dark" data-theme="dark">
+    <div class="slide-inner">
+      <div class="label label-o">시연 · 실제 동작</div>
+      <div class="headline headline-w" style="margin-bottom:16px;">비정형 텍스트 → 구조화 테이블</div>
+      <div class="demo-wrap">
+        <div class="demo-col">
+          <div class="demo-hd demo-hd-in">INPUT — 원문 텍스트</div>
+          <div class="demo-body demo-body-in">
+            "파일 첨부하면 문서 영역이 잘려서 안 보여요.<br>
+            빨리 고쳐주세요 — 실무에서 매일 쓰는 기능인데"<br><br>
+            "크레딧 다 쓰면 그냥 오류 나는데<br>
+            충전 안내 먼저 보여줬으면 좋겠어요"<br><br>
+            "다음 스프린트 때 검토해볼 이슈 — 관리자 페이지<br>
+            통계 필터 기간 선택 기능 없음, 추가 가능하면 좋겠습니다"
+          </div>
+        </div>
+        <div class="demo-arrow"><span>→</span></div>
+        <div class="demo-col">
+          <div class="demo-hd demo-hd-out">OUTPUT — 구조화 테이블</div>
+          <div class="demo-body">
+            <table class="out-table-sm">
+              <thead>
+                <tr><th>No</th><th>요구사항 요약</th><th>기능 유형</th><th>우선순위</th><th>영향</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>파일 첨부 시 문서 영역 잘림 수정</td>
+                  <td><span class="tag-sm tag-bug">버그 수정</span></td>
+                  <td><span class="tag-sm tag-high">높음</span></td>
+                  <td>UI</td>
+                </tr>
+                <tr>
+                  <td>2</td>
+                  <td>크레딧 소진 시 충전 안내 문구·기능</td>
+                  <td><span class="tag-sm tag-new">신규 기능</span></td>
+                  <td><span class="tag-sm tag-low">낮음</span></td>
+                  <td>UI</td>
+                </tr>
+                <tr>
+                  <td>3</td>
+                  <td>관리자 통계 필터 기간 선택 기능 추가</td>
+                  <td><span class="tag-sm tag-new">신규 기능</span></td>
+                  <td><span class="tag-sm tag-mid">중간</span></td>
+                  <td>Admin</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="demo-note">
+        <strong>기획자 검토 인터페이스</strong> — 분류 결과를 웹 브라우저에서 항목별로 승인·수정하고,
+        최종 확정본을 Markdown 파일로 저장합니다.
+        우선순위 최종 확정·중복 병합은 <strong>항상 기획자가 결정</strong>합니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════
+       SLIDE 8  ·  KPI 전후 비교
+  ════════════════════════ -->
+  <div class="slide slide-dark2" data-theme="dark">
+    <div class="slide-inner">
+      <div class="label label-o">시연 · KPI 및 도입 전후 비교</div>
+      <div class="headline headline-w" style="margin-bottom:16px;">수치로 보는 변화</div>
+      <div class="met-row" style="margin-bottom:18px;">
+        <div class="met-mini"><div class="mn">75%</div><div class="ml2">정리 시간 감소</div><div class="md">주 4h → 주 1h</div></div>
+        <div class="met-mini"><div class="mn">50%↑</div><div class="ml2">PRD 착수 속도</div><div class="md">정리와 동시에 초안</div></div>
+        <div class="met-mini"><div class="mn">5→1</div><div class="ml2">채널 통합</div><div class="md">단일 입력 처리</div></div>
+        <div class="met-mini"><div class="mn">4개</div><div class="ml2">분류 기준 표준화</div><div class="md">기능·우선순위·범위·조직</div></div>
+      </div>
+      <div class="card" style="background:transparent;padding:0;">
+        <table class="ba-table-w">
+          <thead>
+            <tr>
+              <th class="th-item" style="width:28%;">항목</th>
+              <th class="th-before" style="width:33%;">도입 전 (수작업)</th>
+              <th class="th-after" style="width:39%;">도입 후 (Agent 적용)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="td-item">요구사항 정리 시간</td>
+              <td class="td-before">주 4시간</td>
+              <td class="td-after">주 1시간<span class="imp-badge">↓ 75%</span></td>
+            </tr>
+            <tr>
+              <td class="td-item">PRD 작성 시작</td>
+              <td class="td-before">정리 완료 후 착수</td>
+              <td class="td-after">정리와 동시에 초안 생성<span class="imp-badge">병렬화</span></td>
+            </tr>
+            <tr>
+              <td class="td-item">멀티채널 취합</td>
+              <td class="td-before">채널별 수동 취합</td>
+              <td class="td-after">단일 입력 자동 통합<span class="imp-badge">자동화</span></td>
+            </tr>
+            <tr>
+              <td class="td-item">우선순위 판단</td>
+              <td class="td-before">담당자 경험 의존</td>
+              <td class="td-after">기준 기반 자동 추정 + 기획자 확정<span class="imp-badge">일관성↑</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════
+       SLIDE 9  ·  멘탈모델 변화
+  ════════════════════════ -->
+  <div class="slide slide-dark" data-theme="dark">
+    <div class="slide-inner">
+      <div class="label label-o">클로징 · 내가 바뀐 것</div>
+      <div class="headline headline-w" style="margin-bottom:16px;">AI를 쓰면서 생각이 어떻게 바뀌었나</div>
+      <div class="mm-grid">
+        <div class="mm-card">
+          <div class="mm-num">1</div>
+          <div class="mm-t">AI를 동료로</div>
+          <div class="mm-q">요청하는 방식이 어떻게 달라졌나?</div>
+          <div class="mm-d">처음엔 "요구사항 정리해줘"라고 했다. 지금은 역할·기준·출력 형식까지 명세로 전달한다. AI에게 업무를 넘기는 것이 아니라, 일하는 방식을 설계하는 것임을 알았다.</div>
+        </div>
+        <div class="mm-card">
+          <div class="mm-num">2</div>
+          <div class="mm-t">활용 영역 확장</div>
+          <div class="mm-q">처음 인식한 순간이 있었나?</div>
+          <div class="mm-d">요구사항 분류가 자동화되자 "PRD 초안도 된다"는 생각이 자연스럽게 따라왔다. 한 업무를 해결하자 다음 업무가 보이기 시작했다.</div>
+        </div>
+        <div class="mm-card">
+          <div class="mm-num">3</div>
+          <div class="mm-t">암묵지의 형식지화</div>
+          <div class="mm-q">나만 알던 방식을 옮겼나?</div>
+          <div class="mm-d">우선순위 판단 기준은 기획자 개인의 경험에 있었다. Agent의 시스템 프롬프트로 쓰면서 그 기준이 문서가 되었고, 누구나 재현할 수 있게 되었다.</div>
+        </div>
+      </div>
+      <div class="mm-insight">
+        <div class="mm-insight-label">핵심 인사이트</div>
+        <div class="mm-insight-text">
+          AI 도구를 만드는 것이 아니라 — 내가 일하는 방식을 AI 명세로 옮기는 과정이었습니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════
+       SLIDE 10  ·  Closing
+  ════════════════════════ -->
+  <div class="slide slide-dark2" data-theme="dark">
+    <div class="slide-inner">
+      <div class="label label-o">클로징 · 다음 단계</div>
+      <div class="headline headline-w" style="margin-bottom:16px;">이 결과물은 <span style="color:var(--orange)">타인을 돕는 도구</span>입니다</div>
+      <div class="closing-grid" style="margin-bottom:18px;">
+        <div class="closing-card">
+          <div class="cc-title">유지할 강점</div>
+          <div class="cc-body">소재의 진정성 — 실무에서 직접 겪은 문제.<br>기획자 검수 인터페이스로 Human Control을 설계에 내재화.</div>
+        </div>
+        <div class="closing-card">
+          <div class="cc-title">현재 한계 & 솔직한 고백</div>
+          <div class="cc-body">실측 데이터 없음 (재직 중 아님). KPI는 실무 경험 기반 추정치.<br>실제 기획 조직에 배포 후 측정값으로 교체할 예정.</div>
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:0.1em;margin-bottom:10px;">과정 이후 로드맵</div>
+        <div class="roadmap">
+          <div class="rm-step"><span class="rm-num">1</span>실제 기획팀에 배포</div>
+          <span class="rm-arrow">→</span>
+          <div class="rm-step"><span class="rm-num">2</span>사용 피드백 수집</div>
+          <span class="rm-arrow">→</span>
+          <div class="rm-step"><span class="rm-num">3</span>PRD 초안 확장</div>
+          <span class="rm-arrow">→</span>
+          <div class="rm-step"><span class="rm-num">4</span>템플릿 일반화</div>
+          <span class="rm-arrow">→</span>
+          <div class="rm-step"><span class="rm-num">5</span>본업 상시 도구화</div>
+        </div>
+      </div>
+      <div class="final-line">
+        서비스 기획자가 <span class="hl">AI를 동료로 쓰는 법</span>을<br>
+        요구사항 분석에서 직접 설계하고 만들었습니다.
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let cur = 0;
+
+  const bar  = document.getElementById('progress-bar');
+  const cnt  = document.getElementById('counter');
+  const dots = document.getElementById('dots');
+  const prev = document.getElementById('nav-prev');
+  const next = document.getElementById('nav-next');
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goto(i);
+    dots.appendChild(d);
+  });
+
+  function render() {
+    const pct = ((cur + 1) / total * 100).toFixed(1);
+    bar.style.width = pct + '%';
+    cnt.textContent = (cur + 1) + ' / ' + total;
+
+    // Theme
+    const theme = slides[cur].dataset.theme;
+    const isDark = theme === 'dark';
+    prev.className = 'nav-arrow' + (isDark ? '' : ' dark');
+    next.className = 'nav-arrow' + (isDark ? '' : ' dark');
+    cnt.className = isDark ? '' : 'dark-text';
+    dots.className = isDark ? '' : 'dark-dots';
+
+    document.querySelectorAll('.dot').forEach((d, i) => {
+      d.classList.toggle('active', i === cur);
+    });
+  }
+
+  function goto(n) {
+    if (n < 0 || n >= total) return;
+    slides[cur].classList.remove('active');
+    slides[cur].classList.add('prev');
+    setTimeout(() => slides[cur].classList.remove('prev'), 400);
+    cur = n;
+    slides[cur].classList.add('active');
+    render();
+  }
+
+  function go(dir) { goto(cur + dir); }
+
+  // Keyboard
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(1); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); go(-1); }
+  });
+
+  // Touch / click navigation
+  let tx = 0;
+  document.getElementById('deck').addEventListener('touchstart', e => { tx = e.touches[0].clientX; });
+  document.getElementById('deck').addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+  });
+
+  render();
+</script>
+</body>
+</html>
